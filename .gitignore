@@ -1,2 +1,33 @@
-target
-.idea
+# Build outputs
+/target/
+/build/
+
+# Logs
+*.log
+app.log
+application.log
+run.log
+build.log
+build_output.log
+server.log
+
+# OS / tooling
+.DS_Store
+Thumbs.db
+
+# IDE / editor
+.idea/
+*.iml
+.vscode/
+
+# Node / frontend
+node_modules/
+
+# Environment / secrets
+.env
+.env.*
+
+# Misc
+/dist/
+/tmp/
+
