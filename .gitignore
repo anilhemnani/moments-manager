@@ -4,12 +4,7 @@
 
 # Logs
 *.log
-app.log
-application.log
-run.log
-build.log
-build_output.log
-server.log
+
 
 # OS / tooling
 .DS_Store

@@ -226,16 +226,30 @@ public class WhatsAppService {
     public java.util.List<Map<String, String>> fetchAvailableTemplates(WeddingEvent event) {
         java.util.List<Map<String, String>> templates = new java.util.ArrayList<>();
 
-        if (event == null || !Boolean.TRUE.equals(event.getWhatsappApiEnabled()) ||
-            event.getWhatsappBusinessAccountId() == null || event.getWhatsappAccessToken() == null) {
-            logger.debug("WhatsApp API not configured for event, cannot fetch templates");
+        if (event == null || !Boolean.TRUE.equals(event.getWhatsappApiEnabled())) {
+            logger.debug("WhatsApp API not enabled for event, cannot fetch templates");
+            return templates;
+        }
+
+        // Validate required fields
+        if (event.getWhatsappBusinessAccountId() == null || event.getWhatsappBusinessAccountId().isEmpty()) {
+            logger.warn("WhatsApp Business Account ID is not configured for event. Cannot fetch templates.");
+            logger.debug("Available IDs - Business Account: {}, Phone Number: {}",
+                event.getWhatsappBusinessAccountId(), event.getWhatsappPhoneNumberId());
+            return templates;
+        }
+
+        if (event.getWhatsappAccessToken() == null || event.getWhatsappAccessToken().isEmpty()) {
+            logger.warn("WhatsApp Access Token is not configured for event. Cannot fetch templates.");
             return templates;
         }
 
         try {
+            String businessAccountId = event.getWhatsappBusinessAccountId().trim();
+            String apiVersion = event.getWhatsappApiVersion() != null ? event.getWhatsappApiVersion() : "v18.0";
+
             String apiUrl = String.format("https://graph.facebook.com/%s/%s/message_templates",
-                    event.getWhatsappApiVersion() != null ? event.getWhatsappApiVersion() : "v18.0",
-                    event.getWhatsappBusinessAccountId());
+                    apiVersion, businessAccountId);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -243,15 +257,23 @@ public class WhatsAppService {
 
             HttpEntity<String> entity = new HttpEntity<>(headers);
 
-            logger.debug("Fetching WhatsApp templates from: {}", apiUrl);
+            logger.debug("Fetching WhatsApp templates from Business Account {} using API version {}", businessAccountId, apiVersion);
+            logger.debug("API URL: {}", apiUrl);
+
             ResponseEntity<String> response = restTemplate.exchange(apiUrl, HttpMethod.GET, entity, String.class);
 
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
                 templates = parseTemplatesFromResponse(response.getBody());
-                logger.info("Successfully fetched {} templates from WhatsApp API", templates.size());
+                logger.info("Successfully fetched {} templates from WhatsApp API for Business Account {}",
+                    templates.size(), businessAccountId);
             } else {
-                logger.error("Failed to fetch templates. Status: {}", response.getStatusCode());
+                logger.error("Failed to fetch templates. Status: {}, Response: {}",
+                    response.getStatusCode(), response.getBody());
             }
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+            logger.error("HTTP Error fetching WhatsApp templates: {} - {}", e.getStatusCode(), e.getResponseBodyAsString());
+            logger.error("Ensure that whatsappBusinessAccountId is set correctly (not a phone number ID)");
+            logger.error("Error details: {}", e.getMessage());
         } catch (Exception e) {
             logger.error("Error fetching WhatsApp templates: {}", e.getMessage(), e);
         }
