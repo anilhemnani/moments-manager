@@ -57,7 +57,7 @@ public class WeddingEvent {
     private String whatsappAccessToken;
 
     @Column(name = "whatsapp_api_version")
-    private String whatsappApiVersion = "v18.0";
+    private String whatsappApiVersion = "v24.0";
 
     @Column(name = "whatsapp_verify_token")
     private String whatsappVerifyToken;

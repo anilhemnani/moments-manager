@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Message Inbox</title>
+    <meta charset="UTF-8">
+    <th:block th:replace="~{_bootstrap_head :: head}"></th:block>
+    <style>
+        .message-row {
+            transition: background-color 0.2s ease;
+            cursor: pointer;
+        }
+        .message-row:hover {
+            background-color: #f8f9fa;
+        }
+        .message-row.unread {
+            background-color: #e7f3ff;
+            font-weight: 500;
+        }
+        .unread-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #dc3545;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .message-preview {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 300px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        .timestamp-small {
+            font-size: 0.85rem;
+            color: #999;
+        }
+        .guest-group {
+            margin-bottom: 20px;
+            border-left: 4px solid #007bff;
+            padding-left: 15px;
+        }
+        .filter-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            margin: 5px 5px 5px 0;
+            background-color: #e9ecef;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        .filter-badge.active {
+            background-color: #007bff;
+            color: white;
+        }
+        .stats-card {
+            text-align: center;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .stats-number {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .stats-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/host/dashboard">Moments Manager</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/host/dashboard">Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/logout">Logout</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1><i class="bi bi-envelope"></i> Message Inbox</h1>
+            <p class="text-muted mb-0" th:text="'Event: ' + ${event.name}"></p>
+        </div>
+        <div>
+            <a th:href="@{/inbox/events/{id}(id=${event.id})}" class="btn btn-primary">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </a>
+            <button type="button" class="btn btn-secondary" onclick="markAllAsRead()">
+                <i class="bi bi-check-all"></i> Mark All Read
+            </button>
+        </div>
+    </div>
+
+    <!-- Error/Success Messages -->
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle"></i> <span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-number" th:text="${messageStats.totalMessages}"></div>
+                <div class="stats-label">Total Messages</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-number" th:text="${messageStats.unreadMessages}" style="color: #dc3545;"></div>
+                <div class="stats-label">Unread Messages</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-number" th:text="${messageStats.inboundMessages}"></div>
+                <div class="stats-label">From Guests</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-number" th:text="${messageStats.totalGuests}"></div>
+                <div class="stats-label">Unique Guests</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Options -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Filter Messages</h5>
+        </div>
+        <div class="card-body">
+            <a th:href="@{/inbox/events/{id}(id=${event.id})}"
+               th:class="${currentFilter == 'all' ? 'filter-badge active' : 'filter-badge'}">
+                <i class="bi bi-inbox"></i> All Messages
+            </a>
+            <a th:href="@{/inbox/events/{id}(id=${event.id}, filter=unread)}"
+               th:class="${currentFilter == 'unread' ? 'filter-badge active' : 'filter-badge'}">
+                <i class="bi bi-exclamation-circle"></i> Unread
+                <span class="badge bg-danger" th:text="${unreadCount}"></span>
+            </a>
+            <a th:href="@{/inbox/events/{id}(id=${event.id}, filter=inbound)}"
+               th:class="${currentFilter == 'inbound' ? 'filter-badge active' : 'filter-badge'}">
+                <i class="bi bi-arrow-down"></i> From Guests
+            </a>
+        </div>
+    </div>
+
+    <!-- Messages List -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="bi bi-chat-dots"></i> Messages</h5>
+        </div>
+        <div class="card-body p-0">
+            <div th:if="${messages.isEmpty()}" class="alert alert-info m-3">
+                <i class="bi bi-info-circle"></i> No messages found.
+            </div>
+
+            <div th:if="${!messages.isEmpty()}">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                    <tr>
+                        <th style="width: 30%;">Guest</th>
+                        <th style="width: 40%;">Message Preview</th>
+                        <th style="width: 15%;">Type</th>
+                        <th style="width: 15%;">Time</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="msg : ${messages.content}"
+                        th:class="'message-row ' + (${!msg.read} ? 'unread' : '')"
+                        th:onclick="'viewMessage(' + ${msg.id} + ')'">
+                        <td>
+                            <div>
+                                <strong th:text="${msg.guest?.familyName ?: 'Unknown'}"></strong>
+                                <div class="text-muted small" th:text="${msg.guestPhoneNumber}"></div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="message-preview" th:text="${msg.messageContent}"></div>
+                        </td>
+                        <td>
+                            <span class="badge bg-info" th:text="${msg.messageType}"></span>
+                            <span th:if="${!msg.read}" class="badge bg-danger">
+                                <i class="bi bi-envelope"></i> Unread
+                            </span>
+                        </td>
+                        <td class="timestamp-small" th:text="${#dates.format(msg.createdAt, 'MMM dd, HH:mm')}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+
+                <!-- Pagination -->
+                <nav th:if="${messages.totalPages > 1}" aria-label="Page navigation" class="mt-3">
+                    <ul class="pagination justify-content-center mb-0">
+                        <li th:class="${messages.first ? 'page-item disabled' : 'page-item'}">
+                            <a th:href="@{/inbox/events/{id}(id=${event.id}, page=0)}" class="page-link">First</a>
+                        </li>
+                        <li th:class="${!messages.hasPrevious() ? 'page-item disabled' : 'page-item'}">
+                            <a th:href="@{/inbox/events/{id}(id=${event.id}, page=${messages.number - 1})}" class="page-link">Previous</a>
+                        </li>
+                        <li th:each="pageNum : ${#numbers.sequence(0, messages.totalPages - 1)}"
+                            th:class="${pageNum == messages.number ? 'page-item active' : 'page-item'}">
+                            <a th:href="@{/inbox/events/{id}(id=${event.id}, page=${pageNum})}" class="page-link" th:text="${pageNum + 1}"></a>
+                        </li>
+                        <li th:class="${!messages.hasNext() ? 'page-item disabled' : 'page-item'}">
+                            <a th:href="@{/inbox/events/{id}(id=${event.id}, page=${messages.number + 1})}" class="page-link">Next</a>
+                        </li>
+                        <li th:class="${messages.last ? 'page-item disabled' : 'page-item'}">
+                            <a th:href="@{/inbox/events/{id}(id=${event.id}, page=${messages.totalPages - 1})}" class="page-link">Last</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function viewMessage(messageId) {
+        window.location.href = `/inbox/messages/${messageId}`;
+    }
+
+    function markAllAsRead() {
+        if (confirm('Mark all messages as read?')) {
+            fetch(`/inbox/events/${getEventId()}/mark-all-read`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Failed to mark messages as read');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error marking messages as read');
+            });
+        }
+    }
+
+    function getEventId() {
+        const path = window.location.pathname;
+        const match = path.match(/\/inbox\/events\/(\d+)/);
+        return match ? match[1] : null;
+    }
+
+    // Auto-refresh inbox every 30 seconds to check for new messages
+    setInterval(() => {
+        fetch(`/inbox/events/${getEventId()}/unread-count`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const unreadCount = data.unreadCount;
+                    // Update badge or show notification
+                    console.log('Unread count:', unreadCount);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+    }, 30000);
+</script>
+</body>
+</html>
+

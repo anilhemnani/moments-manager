@@ -242,7 +242,7 @@ public class WhatsAppService {
 
         try {
             String businessAccountId = event.getWhatsappBusinessAccountId().trim();
-            String apiVersion = event.getWhatsappApiVersion() != null ? event.getWhatsappApiVersion() : "v18.0";
+            String apiVersion = event.getWhatsappApiVersion() != null ? event.getWhatsappApiVersion() : "v24.0";
 
             String apiUrl = String.format("https://graph.facebook.com/%s/%s/message_templates",
                     apiVersion, businessAccountId);

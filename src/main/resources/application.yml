@@ -36,5 +36,10 @@ logging:
     liquibase: DEBUG
 whatsapp:
   api:
-    url: "https://graph.facebook.com/v18.0/YOUR_PHONE_NUMBER_ID/messages"
+    url: "https://graph.facebook.com/v24.0/YOUR_PHONE_NUMBER_ID/messages"
     token: "YOUR_ACCESS_TOKEN"
+  webhook:
+    verify-token: "moments-manager-verify-token"  # Change this to a random string in production
+    app-secret: ""  # Set to your app secret from Meta for webhook signature validation
+    endpoint-path: "/api/whatsapp/webhook"  # The endpoint where Meta will send webhook events
+

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Message Conversation</title>
+    <meta charset="UTF-8">
+    <th:block th:replace="~{_bootstrap_head :: head}"></th:block>
+    <style>
+        .message-bubble {
+            margin-bottom: 15px;
+            display: flex;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message-bubble.inbound {
+            justify-content: flex-start;
+        }
+
+        .message-bubble.outbound {
+            justify-content: flex-end;
+        }
+
+        .message-content {
+            max-width: 60%;
+            padding: 12px 15px;
+            border-radius: 10px;
+            word-wrap: break-word;
+        }
+
+        .message-bubble.inbound .message-content {
+            background-color: #e9ecef;
+            color: #333;
+            border-bottom-left-radius: 2px;
+        }
+
+        .message-bubble.outbound .message-content {
+            background-color: #007bff;
+            color: white;
+            border-bottom-right-radius: 2px;
+        }
+
+        .message-time {
+            font-size: 0.75rem;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        .message-bubble.inbound .message-time {
+            margin-left: 10px;
+        }
+
+        .message-bubble.outbound .message-time {
+            margin-right: 10px;
+            text-align: right;
+        }
+
+        .message-status {
+            font-size: 0.75rem;
+            margin-left: 5px;
+        }
+
+        .message-status.delivered {
+            color: #6c757d;
+        }
+
+        .message-status.read {
+            color: #007bff;
+        }
+
+        .conversation-container {
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            max-height: 600px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+
+        .media-preview {
+            max-width: 200px;
+            border-radius: 8px;
+            margin-top: 8px;
+        }
+
+        .timestamp-separator {
+            text-align: center;
+            margin: 20px 0;
+            font-size: 0.85rem;
+            color: #999;
+        }
+
+        .timestamp-separator::before,
+        .timestamp-separator::after {
+            content: '';
+            display: inline-block;
+            width: 40%;
+            height: 1px;
+            background-color: #ddd;
+            vertical-align: middle;
+        }
+
+        .timestamp-separator::before {
+            margin-right: 10px;
+        }
+
+        .timestamp-separator::after {
+            margin-left: 10px;
+        }
+
+        .guest-info-card {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .action-buttons {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+        }
+    </style>
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/host/dashboard">Moments Manager</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/host/dashboard">Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/logout">Logout</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1><i class="bi bi-chat-dots"></i> Conversation</h1>
+            <p class="text-muted mb-0" th:text="'Event: ' + ${event.name}"></p>
+        </div>
+        <div>
+            <a th:href="@{/inbox/events/{id}(id=${event.id})}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Inbox
+            </a>
+        </div>
+    </div>
+
+    <!-- Guest Information -->
+    <div class="guest-info-card">
+        <div class="row">
+            <div class="col-md-8">
+                <h4 th:text="${guest.familyName}"></h4>
+                <p class="mb-1">
+                    <i class="bi bi-telephone"></i>
+                    <span th:text="${guest.contactPhone}"></span>
+                </p>
+                <p class="mb-0">
+                    <i class="bi bi-envelope"></i>
+                    <span th:text="${guest.contactEmail}"></span>
+                </p>
+            </div>
+            <div class="col-md-4 text-end">
+                <p class="mb-1">
+                    <strong th:text="${messageCount}"></strong> messages
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error/Success Messages -->
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle"></i> <span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- Messages Container -->
+    <div class="card shadow-sm">
+        <div class="card-body conversation-container" id="messageContainer">
+            <div th:if="${conversation.isEmpty()}" class="alert alert-info">
+                <i class="bi bi-info-circle"></i> No messages in this conversation yet.
+            </div>
+
+            <!-- Messages grouped by date -->
+            <div th:each="msg : ${conversation}">
+                <div th:class="'message-bubble ' + (${msg.direction.name()} == 'INBOUND' ? 'inbound' : 'outbound')">
+                    <div>
+                        <div class="message-content">
+                            <span th:text="${msg.messageContent}"></span>
+                            <div th:if="${msg.mediaUrl}" class="mt-2">
+                                <small class="text-muted">
+                                    <i class="bi bi-image"></i>
+                                    <span th:text="${'Media: ' + msg.mediaUrl}"></span>
+                                </small>
+                            </div>
+                        </div>
+                        <div class="message-time">
+                            <span th:text="${#dates.format(msg.createdAt, 'MMM dd, HH:mm')}"></span>
+                            <span th:if="${msg.direction.name()} == 'OUTBOUND'" th:class="'message-status ' + ${msg.status.name().toLowerCase()}">
+                                <i th:if="${msg.status.name()} == 'DELIVERED'" class="bi bi-check"></i>
+                                <i th:if="${msg.status.name()} == 'READ'" class="bi bi-check2-all"></i>
+                                <span th:text="${msg.status.name()}"></span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-outline-secondary" onclick="deleteConversation()">
+                <i class="bi bi-trash"></i> Delete Conversation
+            </button>
+            <a th:href="@{/inbox/events/{id}(id=${event.id})}" class="btn btn-primary">
+                <i class="bi bi-inbox"></i> Back to Inbox
+            </a>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Auto-scroll to bottom on load
+    document.addEventListener('DOMContentLoaded', function() {
+        const messageContainer = document.getElementById('messageContainer');
+        if (messageContainer) {
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+        }
+    });
+
+    function deleteConversation() {
+        if (confirm('Are you sure you want to delete this entire conversation? This action cannot be undone.')) {
+            const eventId = getEventId();
+            const guestId = getGuestId();
+
+            // Delete each message in the conversation
+            const messages = document.querySelectorAll('.message-bubble');
+            let count = 0;
+
+            messages.forEach((messageElement, index) => {
+                // In a real implementation, you would delete each message
+                // For now, just redirect back to inbox after confirmation
+            });
+
+            alert('Conversation deletion feature coming soon');
+            window.location.href = `/inbox/events/${eventId}`;
+        }
+    }
+
+    function getEventId() {
+        const path = window.location.pathname;
+        const match = path.match(/\/inbox\/events\/(\d+)/);
+        return match ? match[1] : null;
+    }
+
+    function getGuestId() {
+        const path = window.location.pathname;
+        const match = path.match(/\/guests\/(\d+)/);
+        return match ? match[1] : null;
+    }
+</script>
+</body>
+</html>
+

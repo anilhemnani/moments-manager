@@ -393,7 +393,7 @@
             <column name="whatsapp_access_token" type="VARCHAR(512)">
                 <constraints nullable="true"/>
             </column>
-            <column name="whatsapp_api_version" type="VARCHAR(50)" defaultValue="v18.0">
+            <column name="whatsapp_api_version" type="VARCHAR(50)" defaultValue="v24.0">
                 <constraints nullable="true"/>
             </column>
             <column name="whatsapp_verify_token" type="VARCHAR(255)">
@@ -450,6 +450,84 @@
         <modifyDataType tableName="attendee_tbl" columnName="mobile_number" newDataType="VARCHAR(50)"/>
         <modifyDataType tableName="guest_tbl" columnName="contact_phone" newDataType="VARCHAR(50)"/>
         <modifyDataType tableName="host_tbl" columnName="phone" newDataType="VARCHAR(50)"/>
+    </changeSet>
+
+    <changeSet id="24-create-guest-message-table" author="auto">
+        <comment>Create table to store WhatsApp messages exchanged between guests and hosts</comment>
+        <createTable tableName="guest_message_tbl">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="event_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_guest_message_event" references="wedding_event_tbl(id)"/>
+            </column>
+            <column name="guest_id" type="BIGINT">
+                <constraints foreignKeyName="fk_guest_message_guest" references="guest_tbl(id)"/>
+            </column>
+            <column name="guest_phone_number" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="message_content" type="TEXT"/>
+            <column name="direction" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="message_type" type="VARCHAR(50)" defaultValue="TEXT"/>
+            <column name="media_url" type="TEXT"/>
+            <column name="is_read" type="BOOLEAN" defaultValue="false"/>
+            <column name="whatsapp_message_id" type="VARCHAR(255)"/>
+            <column name="status" type="VARCHAR(50)" defaultValue="PENDING"/>
+            <column name="error_message" type="TEXT"/>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP"/>
+            <column name="read_at" type="TIMESTAMP"/>
+        </createTable>
+
+        <createIndex indexName="idx_event_is_read" tableName="guest_message_tbl">
+            <column name="event_id"/>
+            <column name="is_read"/>
+        </createIndex>
+
+        <createIndex indexName="idx_guest_event" tableName="guest_message_tbl">
+            <column name="guest_id"/>
+            <column name="event_id"/>
+        </createIndex>
+
+        <createIndex indexName="idx_timestamp" tableName="guest_message_tbl">
+            <column name="created_at"/>
+        </createIndex>
+
+        <createIndex indexName="idx_whatsapp_message_id" tableName="guest_message_tbl">
+            <column name="whatsapp_message_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="25-update-guest-phones-and-enable-whatsapp" author="auto">
+        <comment>Update all guest phone numbers to UK number and enable WhatsApp configuration for event</comment>
+
+        <!-- Update all guest phone numbers to UK number -->
+        <update tableName="guest_tbl">
+            <column name="contact_phone" value="+447878597720"/>
+            <where>event_id = 1</where>
+        </update>
+
+        <!-- Update host phone numbers to UK number -->
+        <update tableName="host_tbl">
+            <column name="phone" value="+447878597720"/>
+            <where>event_id = 1</where>
+        </update>
+
+        <!-- Enable WhatsApp and configure with provided credentials -->
+        <update tableName="wedding_event_tbl">
+            <column name="whatsapp_api_enabled" valueBoolean="true"/>
+            <column name="whatsapp_phone_number_id" value="889286674274022"/>
+            <column name="whatsapp_business_account_id" value="1569365317617857"/>
+            <column name="whatsapp_access_token" value="EAAhsfeFINq4BQamaOppD8FkxRuDFKqSg9l9D11KI412ZCv68AwBe6gMH439N8r5aqZAlGRmu8Ih1zWXYzf1sZAQy7HZB5pOX98ewMvfgB4ydk5nMd5UVGUEUZCZBjWWhvV0CqXpZCaoc5xhGPYZBX6ZBxOndZAeHci22YrsM2nhXeUcNvMBpNZASrHfJkQK6ZAiGCkX8pwZDZD"/>
+            <column name="whatsapp_api_version" value="v24.0"/>
+            <column name="whatsapp_verify_token" value="moments-manager-verify-token"/>
+            <where>id = 1</where>
+        </update>
     </changeSet>
 
 </databaseChangeLog>
