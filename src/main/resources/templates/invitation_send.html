@@ -15,11 +15,10 @@
             background-color: #e7f3ff;
         }
         .guest-row.already-sent {
-            opacity: 0.7;
-            background-color: #f8f9fa;
+            background-color: #fff8e1;
         }
-        .guest-row.already-sent td {
-            text-decoration: line-through;
+        .guest-row.already-sent.selected {
+            background-color: #ffecb3;
         }
     </style>
 </head>
@@ -120,11 +119,15 @@
                 </div>
                 <div th:if="${event.whatsappApiEnabled}" class="alert alert-info mb-3">
                     <i class="bi bi-whatsapp"></i>
-                    <strong th:text="${event.useWhatsappTemplate ? 'Using WhatsApp template: ' + event.whatsappTemplateName : 'Sending plain text via WhatsApp Cloud API'}"></strong>
+                    <strong th:text="${invitation.messageType == 'TEMPLATE' ? 'Using WhatsApp template: ' + invitation.templateName : 'Sending plain text via WhatsApp Cloud API'}"></strong>
                     <div class="small text-muted">
-                        <span th:if="${event.useWhatsappTemplate}">Template language: <span th:text="${event.whatsappTemplateLanguage}"></span></span>
-                        <span th:if="${!event.useWhatsappTemplate}">Plain text will include invitation title and body.</span>
+                        <span th:if="${invitation.messageType == 'TEMPLATE'}">Template language: <span th:text="${invitation.templateLanguage}"></span></span>
+                        <span th:if="${invitation.messageType != 'TEMPLATE'}">Plain text will include invitation title and body.</span>
                     </div>
+                </div>
+                <div th:if="${!sentGuestIds.isEmpty()}" class="alert alert-warning mb-3">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Resending:</strong> Guests marked with <span class="badge bg-warning text-dark"><i class="bi bi-arrow-repeat"></i> Resend</span> have already received this invitation. You can select them to send the invitation again.
                 </div>
                 <div th:if="${!event.whatsappApiEnabled}" class="alert alert-warning mb-3">
                     <i class="bi bi-info-circle"></i> WhatsApp Cloud API is not configured for this event. Messages will be logged only.
@@ -159,7 +162,7 @@
                                        name="guestIds"
                                        th:value="${guest.id}"
                                        th:id="'guest_' + ${guest.id}"
-                                       th:disabled="${sentGuestIds.contains(guest.id)}"
+                                       th:data-already-sent="${sentGuestIds.contains(guest.id)}"
                                        onchange="updateSelectedCount()">
                             </td>
                             <td>
@@ -180,8 +183,9 @@
                             </td>
                             <td class="text-center">
                                 <span th:if="${sentGuestIds.contains(guest.id)}"
-                                      class="badge bg-success">
-                                    <i class="bi bi-check-circle"></i> Sent
+                                      class="badge bg-warning text-dark"
+                                      title="Already sent - will be resent if selected">
+                                    <i class="bi bi-arrow-repeat"></i> Resend
                                 </span>
                                 <span th:if="${!sentGuestIds.contains(guest.id)}"
                                       class="badge bg-secondary">
@@ -219,7 +223,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     function updateSelectedCount() {
-        const checkboxes = document.querySelectorAll('.guest-checkbox:checked:not(:disabled)');
+        const checkboxes = document.querySelectorAll('.guest-checkbox:checked');
         const count = checkboxes.length;
         document.getElementById('selectedCount').textContent = count;
         document.getElementById('sendBtn').disabled = count === 0;
@@ -227,7 +231,7 @@
         // Update row styling
         document.querySelectorAll('.guest-row').forEach(row => {
             const checkbox = row.querySelector('.guest-checkbox');
-            if (checkbox && checkbox.checked && !checkbox.disabled) {
+            if (checkbox && checkbox.checked) {
                 row.classList.add('selected');
             } else {
                 row.classList.remove('selected');
@@ -240,16 +244,16 @@
 
     function updateSelectAllCheckbox() {
         const selectAllCheckbox = document.getElementById('selectAllCheckbox');
-        const enabledCheckboxes = document.querySelectorAll('.guest-checkbox:not(:disabled)');
-        const checkedEnabledCheckboxes = document.querySelectorAll('.guest-checkbox:checked:not(:disabled)');
+        const allCheckboxes = document.querySelectorAll('.guest-checkbox');
+        const checkedCheckboxes = document.querySelectorAll('.guest-checkbox:checked');
 
-        if (enabledCheckboxes.length === 0) {
+        if (allCheckboxes.length === 0) {
             selectAllCheckbox.checked = false;
             selectAllCheckbox.indeterminate = false;
-        } else if (checkedEnabledCheckboxes.length === 0) {
+        } else if (checkedCheckboxes.length === 0) {
             selectAllCheckbox.checked = false;
             selectAllCheckbox.indeterminate = false;
-        } else if (checkedEnabledCheckboxes.length === enabledCheckboxes.length) {
+        } else if (checkedCheckboxes.length === allCheckboxes.length) {
             selectAllCheckbox.checked = true;
             selectAllCheckbox.indeterminate = false;
         } else {
@@ -260,14 +264,14 @@
 
     function toggleSelectAll(checkbox) {
         const isChecked = checkbox.checked;
-        document.querySelectorAll('.guest-checkbox:not(:disabled)').forEach(cb => {
+        document.querySelectorAll('.guest-checkbox').forEach(cb => {
             cb.checked = isChecked;
         });
         updateSelectedCount();
     }
 
     function selectAll() {
-        document.querySelectorAll('.guest-checkbox:not(:disabled)').forEach(cb => {
+        document.querySelectorAll('.guest-checkbox').forEach(cb => {
             cb.checked = true;
         });
         updateSelectedCount();
@@ -282,8 +286,11 @@
 
     function selectUnsent() {
         selectNone();
-        document.querySelectorAll('.guest-checkbox:not(:disabled)').forEach(cb => {
-            cb.checked = true;
+        document.querySelectorAll('.guest-checkbox').forEach(cb => {
+            const alreadySent = cb.getAttribute('data-already-sent') === 'true';
+            if (!alreadySent) {
+                cb.checked = true;
+            }
         });
         updateSelectedCount();
     }
@@ -294,8 +301,33 @@
 
         // Confirm before sending
         document.getElementById('sendForm').addEventListener('submit', function(e) {
-            const count = document.querySelectorAll('.guest-checkbox:checked:not(:disabled)').length;
-            if (!confirm(`Are you sure you want to send this invitation to ${count} guest(s) via WhatsApp?`)) {
+            const selectedCheckboxes = document.querySelectorAll('.guest-checkbox:checked');
+            const count = selectedCheckboxes.length;
+
+            // Count how many are resends
+            let resendCount = 0;
+            let newSendCount = 0;
+            selectedCheckboxes.forEach(cb => {
+                const alreadySent = cb.getAttribute('data-already-sent') === 'true';
+                if (alreadySent) {
+                    resendCount++;
+                } else {
+                    newSendCount++;
+                }
+            });
+
+            let confirmMessage = '';
+            if (resendCount > 0 && newSendCount > 0) {
+                confirmMessage = `Are you sure you want to send this invitation to ${count} guest(s)?\n\n` +
+                                `• ${newSendCount} new send(s)\n` +
+                                `• ${resendCount} resend(s) (already sent before)`;
+            } else if (resendCount > 0) {
+                confirmMessage = `Are you sure you want to RESEND this invitation to ${resendCount} guest(s) who have already received it?`;
+            } else {
+                confirmMessage = `Are you sure you want to send this invitation to ${newSendCount} guest(s) via WhatsApp?`;
+            }
+
+            if (!confirm(confirmMessage)) {
                 e.preventDefault();
             }
         });

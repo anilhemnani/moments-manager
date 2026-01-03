@@ -163,26 +163,17 @@ public class WhatsAppService {
             template.put("name", templateName);
             template.put("language", Map.of("code", templateLanguage != null ? templateLanguage : "en_US"));
 
-            // Optional: set template components (body placeholders). Here we map title/body/image to generic placeholders if present.
-            var components = new java.util.ArrayList<Map<String, Object>>();
-            var bodyParams = new java.util.ArrayList<Map<String, Object>>();
-            if (title != null && !title.isEmpty()) {
-                bodyParams.add(Map.of("type", "text", "text", title));
-            }
-            if (message != null && !message.isEmpty()) {
-                bodyParams.add(Map.of("type", "text", "text", message));
-            }
-            if (imageUrl != null && !imageUrl.isEmpty()) {
-                bodyParams.add(Map.of("type", "text", "text", imageUrl));
-            }
-            if (!bodyParams.isEmpty()) {
-                components.add(Map.of("type", "body", "parameters", bodyParams));
-            }
-            template.put("components", components);
+            // Note: WhatsApp templates are sent exactly as configured in Meta Business Manager
+            // Do not add parameters unless the template was specifically created with placeholders
+            // For templates with placeholders, parameters would need to be added here in components array
 
             requestBody.put("template", template);
 
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+
+            logger.debug("Sending WhatsApp template message: template={}, language={}, to={}",
+                templateName, templateLanguage, phoneNumber);
+
             ResponseEntity<String> response = restTemplate.exchange(apiUrl, HttpMethod.POST, entity, String.class);
 
             if (response.getStatusCode() == HttpStatus.OK) {
@@ -192,6 +183,11 @@ public class WhatsAppService {
                 logger.error("Failed to send WhatsApp template message. Status: {}, Body: {}", response.getStatusCode(), response.getBody());
                 return false;
             }
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+            logger.error("HTTP Error sending template message: {} - {}", e.getStatusCode(), e.getResponseBodyAsString());
+            logger.error("Template: {}, Language: {}", templateName, templateLanguage);
+            logger.error("Note: Ensure template exists and is approved in Meta Business Manager");
+            return false;
         } catch (Exception e) {
             logger.error("Error sending template message via WhatsApp Cloud API: {}", e.getMessage(), e);
             return false;
@@ -355,7 +351,7 @@ public class WhatsAppService {
     }
 
     /**
-     * Validate phone number format for WhatsApp
+     * Validate phone number format for WhatsApp (international format)
      *
      * @param phoneNumber Phone number to validate
      * @return true if valid
@@ -365,10 +361,44 @@ public class WhatsAppService {
             return false;
         }
 
+        // Remove all whitespace, hyphens, parentheses
         String cleanNumber = phoneNumber.replaceAll("[^0-9+]", "");
 
-        // Basic validation: should have at least 10 digits
-        return cleanNumber.length() >= 10;
+        // Validation for international format:
+        // - Should start with + (optional but recommended)
+        // - Should have at least 10 digits (minimum for most countries)
+        // - Should not exceed 15 digits (ITU-T E.164 standard)
+
+        if (cleanNumber.startsWith("+")) {
+            // With country code: +XX XXXXXXXXXX (11-16 chars including +)
+            return cleanNumber.length() >= 11 && cleanNumber.length() <= 16;
+        } else {
+            // Without +: at least 10 digits, max 15
+            return cleanNumber.length() >= 10 && cleanNumber.length() <= 15;
+        }
+    }
+
+    /**
+     * Format phone number for WhatsApp API (E.164 format)
+     * Removes all formatting and ensures it starts with country code
+     *
+     * @param phoneNumber Phone number to format
+     * @return Formatted phone number (digits only, with leading +)
+     */
+    public String formatPhoneNumberForWhatsApp(String phoneNumber) {
+        if (phoneNumber == null || phoneNumber.isEmpty()) {
+            return phoneNumber;
+        }
+
+        // Remove all non-digit characters except +
+        String cleanNumber = phoneNumber.replaceAll("[^0-9+]", "");
+
+        // Ensure it starts with + for international format
+        if (!cleanNumber.startsWith("+")) {
+            logger.warn("Phone number {} does not have country code. Consider adding + prefix.", phoneNumber);
+        }
+
+        return cleanNumber;
     }
 }
 

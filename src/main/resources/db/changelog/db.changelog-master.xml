@@ -148,7 +148,7 @@
             <column name="family_name" value="Sharma"/>
             <column name="contact_name" value="Ravi Sharma"/>
             <column name="contact_email" value="ravi.sharma@example.com"/>
-            <column name="contact_phone" value="9876543210"/>
+            <column name="contact_phone" value="+91 9876543210"/>
             <column name="side" value="Bride"/>
             <column name="address" value="Delhi"/>
             <column name="max_attendees" valueNumeric="5"/>
@@ -159,7 +159,7 @@
             <column name="family_name" value="Patel"/>
             <column name="contact_name" value="Meera Patel"/>
             <column name="contact_email" value="meera.patel@example.com"/>
-            <column name="contact_phone" value="9123456780"/>
+            <column name="contact_phone" value="+91 9123456780"/>
             <column name="side" value="Groom"/>
             <column name="address" value="Mumbai"/>
             <column name="max_attendees" valueNumeric="4"/>
@@ -169,14 +169,14 @@
             <column name="id" valueNumeric="1"/>
             <column name="name" value="Host One"/>
             <column name="email" value="host1@example.com"/>
-            <column name="phone" value="9000000001"/>
+            <column name="phone" value="+91 9000000001"/>
             <column name="event_id" valueNumeric="1"/>
         </insert>
         <insert tableName="host_tbl">
             <column name="id" valueNumeric="2"/>
             <column name="name" value="Host Two"/>
             <column name="email" value="host2@example.com"/>
-            <column name="phone" value="9000000002"/>
+            <column name="phone" value="+91 9000000002"/>
             <column name="event_id" valueNumeric="1"/>
         </insert>
     </changeSet>
@@ -443,6 +443,13 @@
 
     <changeSet id="22-add-whatsapp-template-api-integration" author="auto">
         <comment>Migration for WhatsApp Template API integration - templates now fetched from Meta API</comment>
+    </changeSet>
+
+    <changeSet id="23-increase-phone-number-field-lengths" author="auto">
+        <comment>Increase phone number field lengths to support international format with country codes</comment>
+        <modifyDataType tableName="attendee_tbl" columnName="mobile_number" newDataType="VARCHAR(50)"/>
+        <modifyDataType tableName="guest_tbl" columnName="contact_phone" newDataType="VARCHAR(50)"/>
+        <modifyDataType tableName="host_tbl" columnName="phone" newDataType="VARCHAR(50)"/>
     </changeSet>
 
 </databaseChangeLog>

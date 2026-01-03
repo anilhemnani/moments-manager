@@ -181,7 +181,7 @@ RSVP: Please confirm your attendance by clicking the link below."></textarea>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script>
+<script th:inline="javascript">
     // Live preview
     document.addEventListener('DOMContentLoaded', function() {
         const titleInput = document.getElementById('title');
@@ -207,10 +207,18 @@ RSVP: Please confirm your attendance by clicking the link below."></textarea>
 
     // Populate template dropdown from available templates
     function populateTemplateDropdown() {
-        const availableTemplates = /*[[${availableTemplates}]]*/ [];
+        /*<![CDATA[*/
+        const availableTemplates = [[${availableTemplates}]];
+        /*]]>*/
         const templateSelect = document.getElementById('templateName');
         const dropdownContainer = document.getElementById('templateDropdownContainer');
         const noTemplatesMessage = document.getElementById('noTemplatesMessage');
+
+        // Debug logging
+        console.log('Available Templates:', availableTemplates);
+        console.log('Templates type:', typeof availableTemplates);
+        console.log('Templates length:', availableTemplates ? availableTemplates.length : 'null/undefined');
+        console.log('Templates content:', JSON.stringify(availableTemplates));
 
         // Clear existing options except the placeholder
         templateSelect.innerHTML = '';
@@ -229,17 +237,31 @@ RSVP: Please confirm your attendance by clicking the link below."></textarea>
             // Add template options
             availableTemplates.forEach(function(template) {
                 const option = document.createElement('option');
-                option.value = template.name;
-                option.textContent = template.name + ' (' + template.language + ')';
+                // Handle both object format {name: "x", language: "y"} and other formats
+                if (typeof template === 'object') {
+                    option.value = template.name || template;
+                    option.textContent = (template.name || template) +
+                        (template.language ? ' (' + template.language + ')' : '');
+                } else {
+                    option.value = template;
+                    option.textContent = template;
+                }
                 templateSelect.appendChild(option);
+
+                console.log('Added template option:', option.value, option.textContent);
             });
 
             // Restore previously selected value if any
-            const currentValue = /*[[${invitation.templateName}]]*/ '';
+            /*<![CDATA[*/
+            const currentValue = [[${invitation.templateName}]];
+            /*]]>*/
             if (currentValue) {
                 templateSelect.value = currentValue;
             }
+
+            console.log('Populated', availableTemplates.length, 'templates');
         } else {
+            console.log('No templates available, showing warning message');
             // Show "no templates" message, hide dropdown
             dropdownContainer.style.display = 'none';
             noTemplatesMessage.style.display = 'block';
@@ -257,7 +279,9 @@ RSVP: Please confirm your attendance by clicking the link below."></textarea>
 
         if (messageTypeTemplate.checked) {
             // Template mode - hide template fields if no templates available
-            const availableTemplates = /*[[${availableTemplates}]]*/ [];
+            /*<![CDATA[*/
+            const availableTemplates = [[${availableTemplates}]];
+            /*]]>*/
             if (availableTemplates && availableTemplates.length > 0) {
                 templateFields.style.display = 'block';
                 templateNameSelect.required = true;

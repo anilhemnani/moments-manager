@@ -9,6 +9,8 @@ import com.momentsmanager.repository.WeddingEventRepository;
 import com.momentsmanager.service.InvitationLogService;
 import com.momentsmanager.service.InvitationService;
 import com.momentsmanager.service.WhatsAppService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -25,6 +27,8 @@ import java.util.stream.Collectors;
 @Controller
 @RequestMapping("/events/{eventId}/invitations")
 public class InvitationWebController {
+
+    private static final Logger logger = LoggerFactory.getLogger(InvitationWebController.class);
 
     @Autowired
     private InvitationService invitationService;
@@ -67,7 +71,7 @@ public class InvitationWebController {
 
         WeddingEvent event = eventOpt.get();
         Invitation newInvitation = new Invitation();
-        newInvitation.setMessageType("PLAIN_TEXT");
+        newInvitation.setMessageType("TEMPLATE");
         newInvitation.setTemplateLanguage("en_US");
 
         model.addAttribute("event", event);
@@ -75,6 +79,10 @@ public class InvitationWebController {
 
         // Fetch available WhatsApp templates from Meta API if event has credentials configured
         var availableTemplates = whatsAppService.fetchAvailableTemplates(event);
+        logger.info("Adding {} templates to model for event {}", availableTemplates.size(), eventId);
+        if (!availableTemplates.isEmpty()) {
+            logger.debug("First template: {}", availableTemplates.get(0));
+        }
         model.addAttribute("availableTemplates", availableTemplates);
 
         return "invitation_form";
@@ -116,6 +124,10 @@ public class InvitationWebController {
 
         // Fetch available WhatsApp templates from Meta API if event has credentials configured
         var availableTemplates = whatsAppService.fetchAvailableTemplates(event);
+        logger.info("Adding {} templates to model for event {} (edit mode)", availableTemplates.size(), eventId);
+        if (!availableTemplates.isEmpty()) {
+            logger.debug("First template: {}", availableTemplates.get(0));
+        }
         model.addAttribute("availableTemplates", availableTemplates);
 
         return "invitation_form";

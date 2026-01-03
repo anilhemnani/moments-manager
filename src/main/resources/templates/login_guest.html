@@ -20,7 +20,12 @@
             </div>
             <div class="mb-3">
               <label for="mobile" class="form-label">Mobile Number</label>
-              <input type="text" id="mobile" name="mobile" class="form-control" required>
+              <input type="text" id="mobile" name="mobile" class="form-control"
+                     placeholder="+91 98765 43210 or +1 (555) 123-4567"
+                     pattern="^\+?[0-9\s\-\(\)]+$"
+                     title="Please enter your mobile number with country code"
+                     required>
+              <div class="form-text">Enter with country code (e.g., +91 9876543210)</div>
             </div>
             <button type="submit" class="btn btn-primary w-100">Login</button>
           </form>

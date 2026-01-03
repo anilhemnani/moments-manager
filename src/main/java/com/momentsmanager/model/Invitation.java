@@ -39,7 +39,7 @@ public class Invitation {
 
     @Column(name = "message_type")
     @Builder.Default
-    private String messageType = "PLAIN_TEXT"; // PLAIN_TEXT or TEMPLATE
+    private String messageType = "TEMPLATE"; // PLAIN_TEXT or TEMPLATE
 
     @Column(name = "template_name")
     private String templateName; // WhatsApp template name (required when messageType is TEMPLATE)

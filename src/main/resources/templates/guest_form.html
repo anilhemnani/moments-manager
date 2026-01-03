@@ -67,7 +67,13 @@
 
                         <div class="mb-3">
                             <label for="contactPhone" class="form-label">Phone <span class="text-danger">*</span></label>
-                            <input type="tel" class="form-control" id="contactPhone" name="contactPhone" th:value="${guest.contactPhone}" required>
+                            <input type="tel" class="form-control" id="contactPhone" name="contactPhone"
+                                   th:value="${guest.contactPhone}"
+                                   placeholder="+91 98765 43210 or +1 (555) 123-4567"
+                                   pattern="^\+?[0-9\s\-\(\)]+$"
+                                   title="Please enter a valid phone number with country code (e.g., +91 9876543210)"
+                                   required>
+                            <div class="form-text">Include country code (e.g., +91 for India, +1 for US/Canada)</div>
                         </div>
 
                         <div class="mb-3">
