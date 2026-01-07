@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${eventName} + ' - Wedding Event'">Wedding Event</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 60px 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .couples {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            align-items: center;
+            margin-top: 20px;
+            font-size: 1.2em;
+        }
+
+        .couple-name {
+            font-weight: 600;
+        }
+
+        .separator {
+            width: 2px;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .content {
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .event-info {
+            margin-bottom: 30px;
+        }
+
+        .info-label {
+            font-size: 0.9em;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .info-value {
+            font-size: 1.4em;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #ddd, transparent);
+            margin: 30px 0;
+        }
+
+        .cta-section {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 2px solid #f0f0f0;
+        }
+
+        .cta-text {
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+
+        .contact-info {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .contact-info p {
+            color: #555;
+            margin: 10px 0;
+            font-size: 0.95em;
+        }
+
+        footer {
+            background: #f5f5f5;
+            padding: 20px;
+            text-align: center;
+            color: #999;
+            font-size: 0.85em;
+        }
+
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .couples {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .separator {
+                width: 30px;
+                height: 2px;
+            }
+
+            .content {
+                padding: 30px 20px;
+            }
+        }
+
+        .status-badge {
+            display: inline-block;
+            background: #4caf50;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 th:text="${eventName}">Wedding Event</h1>
+            <div class="couples">
+                <span class="couple-name" th:text="${brideName}">Bride</span>
+                <div class="separator"></div>
+                <span class="couple-name" th:text="${groomName}">Groom</span>
+            </div>
+            <div class="status-badge" th:if="${event.status}">
+                <span th:text="${event.status}">Published</span>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="event-info">
+                <p class="info-label">Wedding Date</p>
+                <p class="info-value" th:text="${eventDate}">January 15, 2025</p>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="cta-section">
+                <p class="cta-text">
+                    We are delighted to invite you to celebrate our special day!
+                </p>
+                <div class="contact-info">
+                    <p><strong>For more information or to RSVP:</strong></p>
+                    <p>Please access the full event portal or contact us directly.</p>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Powered by Moments Manager - Wedding Event Management</p>
+        </footer>
+    </div>
+</body>
+</html>
+

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>My Invitations</title>
+    <meta charset="UTF-8">
+    <th:block th:replace="~{_bootstrap_head :: head}"></th:block>
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">Moments Manager</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" href="/logout">Logout</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container py-5">
+    <!-- Empty State -->
+    <div th:if="${emptyState}" class="text-center py-5">
+        <div class="mb-4">
+            <i class="bi bi-envelope" style="font-size: 3rem; color: #ccc;"></i>
+        </div>
+        <h2>No Invitations Yet</h2>
+        <p class="text-muted">You haven't received any wedding invitations yet.</p>
+        <p class="text-muted small">Check back later or ask the couple for your invitation link.</p>
+        <a href="/" class="btn btn-primary mt-4">Go to Home</a>
+    </div>
+
+    <!-- Invitations List -->
+    <div th:if="!${emptyState}">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>My Wedding Invitations</h1>
+            <a href="/logout" class="btn btn-outline-danger">
+                <i class="bi bi-box-arrow-left"></i> Logout
+            </a>
+        </div>
+
+        <div class="row">
+            <div th:each="invitation : ${invitations}" class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100 shadow-sm invitation-card" style="cursor: pointer;">
+                    <div class="card-body d-flex flex-column">
+                        <!-- Event Header -->
+                        <div class="mb-3">
+                            <h5 class="card-title" th:text="${invitation.event.name}">Wedding Name</h5>
+                            <p class="card-text text-muted small">
+                                <span th:text="${invitation.event.brideName} + ' & ' + ${invitation.event.groomName}">Couple Names</span>
+                            </p>
+                        </div>
+
+                        <!-- Invitation Details -->
+                        <div class="mb-3 flex-grow-1">
+                            <p class="card-text">
+                                <strong th:text="${invitation.title}">Invitation Title</strong>
+                            </p>
+                            <p class="card-text text-muted small" th:if="${invitation.message}">
+                                <span th:text="${#strings.abbreviate(invitation.message, 100)}">Message preview</span>
+                            </p>
+                        </div>
+
+                        <!-- Wedding Date -->
+                        <div class="alert alert-info mb-3" role="alert">
+                            <i class="bi bi-calendar-event"></i>
+                            <span th:text="'Wedding: ' + ${invitation.event.date}">Wedding Date</span>
+                        </div>
+
+                        <!-- View Button -->
+                        <a th:href="@{/invitations/{id}(id=${invitation.id})}" class="btn btn-primary w-100">
+                            <i class="bi bi-eye"></i> View Invitation
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .invitation-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .invitation-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

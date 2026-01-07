@@ -8,6 +8,6 @@ import java.util.Optional;
 
 @Repository
 public interface TravelInfoRepository extends JpaRepository<TravelInfo, Long> {
-    Optional<TravelInfo> findByAttendeeId(Long attendeeId);
+    Optional<TravelInfo> findByGuestId(Long guestId);
 }
 

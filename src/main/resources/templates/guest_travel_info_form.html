@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Travel Information</title>
+    <meta charset="UTF-8">
+    <th:block th:replace="~{_bootstrap_head :: head}"></th:block>
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">Moments Manager</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" href="/invitations">My Invitations</a></li>
+                <li class="nav-item"><a class="nav-link" href="/logout">Logout</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-warning text-dark">
+                    <h3 class="mb-0"><i class="bi bi-airplane"></i> Travel Information</h3>
+                </div>
+                <div class="card-body p-5">
+                    <p class="text-muted mb-4">Share your travel details to help us coordinate pickups and accommodations
+                    </p>
+
+                    <form action="/invitations/travel-info/save" method="post" th:object="${travelInfo}">
+                        <!-- Hidden fields -->
+                        <input type="hidden" name="guestId" th:value="${guest.id}"/>
+                        <input type="hidden" name="eventId" th:value="${eventId}"/>
+
+                        <!-- Arrival Information -->
+                        <div class="card mb-4 bg-light">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-arrow-down-circle"></i> Arrival</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="arrivalMode" class="form-label">Mode of Transport</label>
+                                        <select id="arrivalMode" th:field="*{arrivalMode}" class="form-select">
+                                            <option value="">-- Select --</option>
+                                            <option value="FLIGHT">✈️ Flight</option>
+                                            <option value="TRAIN">🚂 Train</option>
+                                            <option value="CAR">🚗 Car</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="arrivalDateTime" class="form-label">Arrival Date & Time</label>
+                                        <input type="datetime-local" th:field="*{arrivalDateTime}" class="form-control">
+                                    </div>
+                                </div>
+
+                                <div class="row" id="arrivalFlightFields" style="display:none;">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="arrivalFlightNumber" class="form-label">Flight Number (if applicable)
+                                        </label>
+                                        <input type="text" th:field="*{arrivalFlightNumber}" class="form-control"
+                                               placeholder="e.g., AI 123">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="arrivalAirport" class="form-label">Airport</label>
+                                        <input type="text" th:field="*{arrivalAirport}" class="form-control"
+                                               placeholder="e.g., Indira Gandhi Airport"
+                                               th:value="${travelInfo.arrivalAirport ?: event.preferredTravelAirport ?: ''}">
+                                    </div>
+                                </div>
+                                <div class="row" id="arrivalTrainFields" style="display:none;">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="arrivalTrainNumber" class="form-label">Train Number (if applicable)</label>
+                                        <input type="text" th:field="*{arrivalTrainNumber}" class="form-control"
+                                               placeholder="e.g., 12345">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="arrivalStation" class="form-label">Station</label>
+                                        <input type="text" th:field="*{arrivalStation}" class="form-control"
+                                               placeholder="e.g., New Delhi"
+                                               th:value="${travelInfo.arrivalStation ?: event.preferredTravelStation ?: ''}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Departure Information -->
+                        <div class="card mb-4 bg-light">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-arrow-up-circle"></i> Departure</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="departureMode" class="form-label">Mode of Transport</label>
+                                        <select id="departureMode" th:field="*{departureMode}" class="form-select">
+                                            <option value="">-- Select --</option>
+                                            <option value="FLIGHT">✈️ Flight</option>
+                                            <option value="TRAIN">🚂 Train</option>
+                                            <option value="CAR">🚗 Car</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="departureDateTime" class="form-label">Departure Date & Time</label>
+                                        <input type="datetime-local" th:field="*{departureDateTime}" class="form-control">
+                                    </div>
+                                </div>
+
+                                <div class="row" id="departureFlightFields" style="display:none;">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="departureFlightNumber" class="form-label">Flight Number (if applicable)
+                                        </label>
+                                        <input type="text" th:field="*{departureFlightNumber}" class="form-control"
+                                               placeholder="e.g., AI 124">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="departureAirport" class="form-label">Airport</label>
+                                        <input type="text" th:field="*{departureAirport}" class="form-control"
+                                               placeholder="e.g., Indira Gandhi Airport"
+                                               th:value="${travelInfo.departureAirport ?: event.preferredTravelAirport ?: ''}">
+                                        <small class="form-text text-muted">
+                                            Default: <span th:text="${event.preferredTravelAirport ?: 'Not set'}">Default airport
+                                            </span>
+                                        </small>
+                                    </div>
+                                </div>
+                                <div class="row" id="departureTrainFields" style="display:none;">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="departureTrainNumber" class="form-label">Train Number (if applicable)
+                                        </label>
+                                        <input type="text" th:field="*{departureTrainNumber}" class="form-control"
+                                               placeholder="e.g., 67890">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="departureStation" class="form-label">Station</label>
+                                        <input type="text" th:field="*{departureStation}" class="form-control"
+                                               placeholder="e.g., New Delhi"
+                                               th:value="${travelInfo.departureStation ?: event.preferredTravelStation ?: ''}">
+                                        <small class="form-text text-muted">
+                                            Default: <span th:text="${event.preferredTravelStation ?: 'Not set'}">Default station</span>
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Assistance Needed -->
+                        <div class="card mb-4 bg-light">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-hand-thumbs-up"></i> Assistance</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" th:field="*{needsPickup}" id="needsPickup">
+                                        <label class="form-check-label" for="needsPickup">
+                                            Need pickup from airport/station?
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" th:field="*{needsDrop}" id="needsDrop">
+                                        <label class="form-check-label" for="needsDrop">
+                                            Need drop to airport/station?
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Special Requirements -->
+                        <div class="mb-4">
+                            <label for="specialRequirements" class="form-label">Special Requirements</label>
+                            <textarea th:field="*{specialRequirements}" class="form-control" rows="3"
+                                      placeholder="e.g., dietary restrictions, accessibility needs, etc."></textarea>
+                        </div>
+
+                        <!-- Additional Notes -->
+                        <div class="mb-4">
+                            <label for="notes" class="form-label">Additional Notes</label>
+                            <textarea th:field="*{notes}" class="form-control" rows="3"
+                                      placeholder="Any other information you'd like to share"></textarea>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-warning btn-lg">
+                                <i class="bi bi-check-circle"></i> Save Travel Details
+                            </button>
+                            <a href="/invitations" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function toggleArrivalFields() {
+    const mode = document.getElementById('arrivalMode').value;
+    const flightFields = document.getElementById('arrivalFlightFields');
+    const trainFields = document.getElementById('arrivalTrainFields');
+
+    flightFields.style.display = 'none';
+    trainFields.style.display = 'none';
+
+    if (mode === 'FLIGHT') {
+        flightFields.style.display = 'flex';
+        // clear train-only fields
+        document.querySelector('[name="arrivalTrainNumber"]').value = '';
+        document.querySelector('[name="arrivalStation"]').value = '';
+    } else if (mode === 'TRAIN') {
+        trainFields.style.display = 'flex';
+        // clear flight-only fields
+        document.querySelector('[name="arrivalFlightNumber"]').value = '';
+        document.querySelector('[name="arrivalAirport"]').value = '';
+    } else {
+        // clear all mode-specific fields
+        document.querySelector('[name="arrivalFlightNumber"]').value = '';
+        document.querySelector('[name="arrivalAirport"]').value = '';
+        document.querySelector('[name="arrivalTrainNumber"]').value = '';
+        document.querySelector('[name="arrivalStation"]').value = '';
+    }
+}
+
+function toggleDepartureFields() {
+    const mode = document.getElementById('departureMode').value;
+    const flightFields = document.getElementById('departureFlightFields');
+    const trainFields = document.getElementById('departureTrainFields');
+
+    flightFields.style.display = 'none';
+    trainFields.style.display = 'none';
+
+    if (mode === 'FLIGHT') {
+        flightFields.style.display = 'flex';
+        // clear train-only fields
+        document.querySelector('[name="departureTrainNumber"]').value = '';
+        document.querySelector('[name="departureStation"]').value = '';
+    } else if (mode === 'TRAIN') {
+        trainFields.style.display = 'flex';
+        // clear flight-only fields
+        document.querySelector('[name="departureFlightNumber"]').value = '';
+        document.querySelector('[name="departureAirport"]').value = '';
+    } else {
+        // clear all mode-specific fields
+        document.querySelector('[name="departureFlightNumber"]').value = '';
+        document.querySelector('[name="departureAirport"]').value = '';
+        document.querySelector('[name="departureTrainNumber"]').value = '';
+        document.querySelector('[name="departureStation"]').value = '';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    toggleArrivalFields();
+    toggleDepartureFields();
+    document.getElementById('arrivalMode').addEventListener('change', toggleArrivalFields);
+    document.getElementById('departureMode').addEventListener('change', toggleDepartureFields);
+});
+</script>
+</body>
+</html>

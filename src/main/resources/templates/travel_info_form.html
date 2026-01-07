@@ -62,11 +62,9 @@
                                 <label for="arrivalMode" class="form-label">Mode of Travel</label>
                                 <select class="form-select" id="arrivalMode" th:field="*{arrivalMode}" onchange="toggleArrivalFields()">
                                     <option value="">-- Select Mode --</option>
-                                    <option value="Flight">Flight</option>
-                                    <option value="Train">Train</option>
-                                    <option value="Car">Car</option>
-                                    <option value="Bus">Bus</option>
-                                    <option value="Other">Other</option>
+                                    <option value="FLIGHT">Flight</option>
+                                    <option value="TRAIN">Train</option>
+                                    <option value="CAR">Car</option>
                                 </select>
                             </div>
 
@@ -84,7 +82,8 @@
 
                             <div class="col-md-6 mb-3">
                                 <label for="arrivalAirport" class="form-label">Arrival Airport</label>
-                                <input type="text" class="form-control" id="arrivalAirport" th:field="*{arrivalAirport}" placeholder="e.g., Mumbai International">
+                                <input type="text" class="form-control" id="arrivalAirport" th:field="*{arrivalAirport}"
+                                       th:value="${travelInfo.arrivalAirport ?: event.preferredTravelAirport}" placeholder="e.g., Mumbai International">
                             </div>
                         </div>
 
@@ -96,7 +95,8 @@
 
                             <div class="col-md-6 mb-3">
                                 <label for="arrivalStation" class="form-label">Arrival Station</label>
-                                <input type="text" class="form-control" id="arrivalStation" th:field="*{arrivalStation}" placeholder="e.g., Mumbai Central">
+                                <input type="text" class="form-control" id="arrivalStation" th:field="*{arrivalStation}"
+                                       th:value="${travelInfo.arrivalStation ?: event.preferredTravelStation}" placeholder="e.g., Mumbai Central">
                             </div>
                         </div>
 
@@ -110,11 +110,9 @@
                                 <label for="departureMode" class="form-label">Mode of Travel</label>
                                 <select class="form-select" id="departureMode" th:field="*{departureMode}" onchange="toggleDepartureFields()">
                                     <option value="">-- Select Mode --</option>
-                                    <option value="Flight">Flight</option>
-                                    <option value="Train">Train</option>
-                                    <option value="Car">Car</option>
-                                    <option value="Bus">Bus</option>
-                                    <option value="Other">Other</option>
+                                    <option value="FLIGHT">Flight</option>
+                                    <option value="TRAIN">Train</option>
+                                    <option value="CAR">Car</option>
                                 </select>
                             </div>
 
@@ -132,7 +130,8 @@
 
                             <div class="col-md-6 mb-3">
                                 <label for="departureAirport" class="form-label">Departure Airport</label>
-                                <input type="text" class="form-control" id="departureAirport" th:field="*{departureAirport}" placeholder="e.g., Mumbai International">
+                                <input type="text" class="form-control" id="departureAirport" th:field="*{departureAirport}"
+                                       th:value="${travelInfo.departureAirport ?: event.preferredTravelAirport}" placeholder="e.g., Mumbai International">
                             </div>
                         </div>
 
@@ -144,33 +143,14 @@
 
                             <div class="col-md-6 mb-3">
                                 <label for="departureStation" class="form-label">Departure Station</label>
-                                <input type="text" class="form-control" id="departureStation" th:field="*{departureStation}" placeholder="e.g., Mumbai Central">
+                                <input type="text" class="form-control" id="departureStation" th:field="*{departureStation}"
+                                       th:value="${travelInfo.departureStation ?: event.preferredTravelStation}" placeholder="e.g., Mumbai Central">
                             </div>
                         </div>
 
                         <!-- Additional Requirements -->
                         <div class="section-header">
                             <h6 class="mb-0"><i class="bi bi-list-check"></i> Additional Requirements</h6>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="needsPickup" th:field="*{needsPickup}">
-                                    <label class="form-check-label" for="needsPickup">
-                                        <i class="bi bi-car-front"></i> Needs Pickup from Arrival Point
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6 mb-3">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="needsDrop" th:field="*{needsDrop}">
-                                    <label class="form-check-label" for="needsDrop">
-                                        <i class="bi bi-car-front"></i> Needs Drop to Departure Point
-                                    </label>
-                                </div>
-                            </div>
                         </div>
 
                         <div class="mb-3">
@@ -210,10 +190,22 @@
         flightFields.classList.remove('active');
         trainFields.classList.remove('active');
 
-        if (mode === 'Flight') {
+        if (mode === 'FLIGHT') {
             flightFields.classList.add('active');
-        } else if (mode === 'Train') {
+            // Clear train-only fields when switching to flight
+            document.getElementById('arrivalTrainNumber').value = '';
+            document.getElementById('arrivalStation').value = '';
+        } else if (mode === 'TRAIN') {
             trainFields.classList.add('active');
+            // Clear flight-only fields when switching to train
+            document.getElementById('arrivalFlightNumber').value = '';
+            document.getElementById('arrivalAirport').value = '';
+        } else {
+            // Clear all mode-specific fields when no mode selected
+            document.getElementById('arrivalFlightNumber').value = '';
+            document.getElementById('arrivalAirport').value = '';
+            document.getElementById('arrivalTrainNumber').value = '';
+            document.getElementById('arrivalStation').value = '';
         }
     }
 
@@ -225,10 +217,22 @@
         flightFields.classList.remove('active');
         trainFields.classList.remove('active');
 
-        if (mode === 'Flight') {
+        if (mode === 'FLIGHT') {
             flightFields.classList.add('active');
-        } else if (mode === 'Train') {
+            // Clear train-only fields when switching to flight
+            document.getElementById('departureTrainNumber').value = '';
+            document.getElementById('departureStation').value = '';
+        } else if (mode === 'TRAIN') {
             trainFields.classList.add('active');
+            // Clear flight-only fields when switching to train
+            document.getElementById('departureFlightNumber').value = '';
+            document.getElementById('departureAirport').value = '';
+        } else {
+            // Clear all mode-specific fields when no mode selected
+            document.getElementById('departureFlightNumber').value = '';
+            document.getElementById('departureAirport').value = '';
+            document.getElementById('departureTrainNumber').value = '';
+            document.getElementById('departureStation').value = '';
         }
     }
 
@@ -240,4 +244,3 @@
 </script>
 </body>
 </html>
-

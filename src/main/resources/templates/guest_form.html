@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+o<!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Guest Form</title>
@@ -96,6 +96,42 @@
                             <input type="number" class="form-control" id="maxAttendees" name="maxAttendees" th:value="${guest.maxAttendees}" min="0" required>
                         </div>
 
+                        <!-- Preferred Arrival Date -->
+                        <div class="card mb-4 bg-light">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-arrow-down-circle"></i> Preferred Arrival</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="expectedArrivalDate" class="form-label">Arrival Date</label>
+                                    <input type="date" class="form-control" id="expectedArrivalDate"
+                                           name="expectedArrivalDate"
+                                           th:value="${guest.expectedArrivalDate != null ? guest.expectedArrivalDate : event.expectedGuestArrivalDate}">
+                                    <small class="form-text text-muted">
+                                        Event default: <span th:text="${event.expectedGuestArrivalDate ?: 'Not set'}">Default</span>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Preferred Departure Date -->
+                        <div class="card mb-4 bg-light">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-arrow-up-circle"></i> Preferred Departure</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="expectedDepartureDate" class="form-label">Departure Date</label>
+                                    <input type="date" class="form-control" id="expectedDepartureDate"
+                                           name="expectedDepartureDate"
+                                           th:value="${guest.expectedDepartureDate != null ? guest.expectedDepartureDate : event.expectedGuestDepartureDate}">
+                                    <small class="form-text text-muted">
+                                        Event default: <span th:text="${event.expectedGuestDepartureDate ?: 'Not set'}">Default</span>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                             <a th:href="@{/events/{id}/guests(id=${event.id})}" class="btn btn-secondary">
                                 <i class="bi bi-arrow-left"></i> Cancel
@@ -112,6 +148,31 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Auto-populate preferred arrival/departure dates from event defaults on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const isNewGuest = document.querySelector('h5 i.bi-person-plus-fill') !== null;
+
+        if (isNewGuest) {
+            // Get event defaults from the page
+            const eventDefaultArrival = document.querySelector('small')?.textContent;
+
+            // Set default values from event if they're not already set
+            const arrivalField = document.getElementById('expectedArrivalDate');
+            const departureField = document.getElementById('expectedDepartureDate');
+
+            if (arrivalField && !arrivalField.value) {
+                // Try to extract from event default text or use placeholder
+                // For now, we'll let the user set them manually
+            }
+
+            if (departureField && !departureField.value) {
+                // Try to extract from event default text or use placeholder
+                // For now, we'll let the user set them manually
+            }
+        }
+    });
+</script>
 </body>
 </html>
 

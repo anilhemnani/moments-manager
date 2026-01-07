@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<th:block th:replace="~{_bootstrap_head :: head}"></th:block>
+<body class="bg-light">
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">Moments Manager</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" href="/host/dashboard">Dashboard</a></li>
+                <li class="nav-item"><a class="nav-link" href="/logout">Logout</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Guest Travel Information</h2>
+        <a href="/host/dashboard" class="btn btn-secondary">Back to Dashboard</a>
+    </div>
+
+    <!-- Event Selector -->
+    <div class="card mb-4" th:if="${events != null and !events.empty}">
+        <div class="card-body">
+            <form method="get" action="/host/travel-info" class="row g-3">
+                <div class="col-md-10">
+                    <label for="eventId" class="form-label">Select Event:</label>
+                    <select name="eventId" id="eventId" class="form-select" onchange="this.form.submit()">
+                        <option th:each="event : ${events}"
+                                th:value="${event.id}"
+                                th:text="${event.name}"
+                                th:selected="${event.id == selectedEventId}">
+                        </option>
+                    </select>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Travel Info Table -->
+    <div th:if="${travelInfoList != null and !travelInfoList.empty}">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Travel Details</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Guest Name</th>
+                            <th>Contact</th>
+                            <th>Arrival</th>
+                            <th>Departure</th>
+                            <th>Pickup</th>
+                            <th>Drop</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="travelInfo : ${travelInfoList}">
+                            <td>
+                                <strong th:text="${travelInfo.guest.contactName}">Guest Name</strong>
+                                <br>
+                                <small class="text-muted" th:text="${travelInfo.guest.familyName}">Family</small>
+                            </td>
+                            <td>
+                                <small th:if="${travelInfo.guest.contactPhone}" th:text="${travelInfo.guest.contactPhone}">Phone</small>
+                                <br th:if="${travelInfo.guest.contactPhone && travelInfo.guest.contactEmail}">
+                                <small th:if="${travelInfo.guest.contactEmail}" th:text="${travelInfo.guest.contactEmail}">Email</small>
+                            </td>
+                            <td>
+                                <div th:if="${travelInfo.arrivalMode != null}">
+                                    <strong th:text="${travelInfo.arrivalMode}">Mode</strong>
+                                    <br>
+                                    <small th:text="${travelInfo.arrivalDateTime}">Date/Time</small>
+                                    <br>
+                                    <small class="text-muted" th:if="${travelInfo.arrivalFlightNumber != null}">
+                                        Flight: <span th:text="${travelInfo.arrivalFlightNumber}"></span>
+                                    </small>
+                                    <small class="text-muted" th:if="${travelInfo.arrivalTrainNumber != null}">
+                                        Train: <span th:text="${travelInfo.arrivalTrainNumber}"></span>
+                                    </small>
+                                </div>
+                                <span th:if="${travelInfo.arrivalMode == null}" class="text-muted">Not set</span>
+                            </td>
+                            <td>
+                                <div th:if="${travelInfo.departureMode != null}">
+                                    <strong th:text="${travelInfo.departureMode}">Mode</strong>
+                                    <br>
+                                    <small th:text="${travelInfo.departureDateTime}">Date/Time</small>
+                                    <br>
+                                    <small class="text-muted" th:if="${travelInfo.departureFlightNumber != null}">
+                                        Flight: <span th:text="${travelInfo.departureFlightNumber}"></span>
+                                    </small>
+                                    <small class="text-muted" th:if="${travelInfo.departureTrainNumber != null}">
+                                        Train: <span th:text="${travelInfo.departureTrainNumber}"></span>
+                                    </small>
+                                </div>
+                                <span th:if="${travelInfo.departureMode == null}" class="text-muted">Not set</span>
+                            </td>
+                            <td>
+                                <span th:if="${travelInfo.needsPickup}" class="badge bg-success">Yes</span>
+                                <span th:if="${!travelInfo.needsPickup}" class="badge bg-secondary">No</span>
+                            </td>
+                            <td>
+                                <span th:if="${travelInfo.needsDrop}" class="badge bg-success">Yes</span>
+                                <span th:if="${!travelInfo.needsDrop}" class="badge bg-secondary">No</span>
+                            </td>
+                            <td>
+                                <a th:href="@{/host/travel-info/edit(guestId=${travelInfo.guest.id}, eventId=${selectedEventId})}"
+                                   class="btn btn-sm btn-primary">Edit</a>
+                                <form method="post" th:action="@{'/host/travel-info/' + ${travelInfo.id} + '/delete'}" class="d-inline">
+                                    <input type="hidden" name="eventId" th:value="${selectedEventId}" />
+                                    <button type="submit" class="btn btn-sm btn-danger"
+                                            onclick="return confirm('Are you sure you want to delete this travel information?')">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- No Travel Info -->
+    <div th:if="${travelInfoList == null or travelInfoList.empty}" class="alert alert-info">
+        <i class="bi bi-info-circle"></i> No travel information recorded yet for this event.
+        <br>
+        <small>Travel information can be added for guests who have accepted their RSVP.</small>
+    </div>
+
+    <!-- No Events -->
+    <div th:if="${events == null or events.empty}" class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle"></i> No events found for your account. Please contact the administrator.
+    </div>
+</div>
+</body>
+</html>
+

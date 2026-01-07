@@ -68,24 +68,41 @@
             </div>
 
             <div class="row">
-              <div class="col-md-6 mb-3">
-                <label for="expected_arrival" class="form-label">Expected Guest Arrival (date/time)</label>
-                <input type="datetime-local" class="form-control" id="expected_arrival" th:field="*{expectedGuestArrivalDateTime}">
-              </div>
-              <div class="col-md-6 mb-3">
-                <label for="expected_departure" class="form-label">Expected Guest Departure (date/time)</label>
-                <input type="datetime-local" class="form-control" id="expected_departure" th:field="*{expectedGuestDepartureDateTime}">
+              <div class="col-md-12 mb-3">
+                <label for="subdomain" class="form-label">Subdomain <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="subdomain" th:field="*{subdomain}"
+                       th:disabled="${event.id != null}" required
+                       placeholder="e.g., pratibha-karthik (lowercase, alphanumeric and hyphens only)"
+                       pattern="^[a-z0-9-]+$"
+                       title="Subdomain must be lowercase letters, numbers, and hyphens only">
+                <div class="form-text" th:if="${event.id == null}">
+                  Unique identifier for public event page. Can only be set during creation. Access via: http://domain.com/public/{subdomain}
+                </div>
+                <div class="form-text alert alert-info mt-2" th:if="${event.id != null}">
+                  <strong>⚠️ Immutable:</strong> Subdomain cannot be changed after event creation. Current: <code th:text="${event.subdomain}"></code>
+                </div>
               </div>
             </div>
 
             <div class="row">
               <div class="col-md-6 mb-3">
-                <label for="preferred_airport" class="form-label">Preferred Airport for Arrival</label>
-                <input type="text" class="form-control" id="preferred_airport" th:field="*{preferredAirportArrival}" placeholder="e.g., DEL, BOM">
+                <label for="expected_arrival" class="form-label">Expected Guest Arrival Date</label>
+                <input type="date" class="form-control" id="expected_arrival" th:field="*{expectedGuestArrivalDate}">
               </div>
               <div class="col-md-6 mb-3">
-                <label for="preferred_station" class="form-label">Preferred Station for Arrival</label>
-                <input type="text" class="form-control" id="preferred_station" th:field="*{preferredStationArrival}" placeholder="e.g., NDLS, BCT">
+                <label for="expected_departure" class="form-label">Expected Guest Departure Date</label>
+                <input type="date" class="form-control" id="expected_departure" th:field="*{expectedGuestDepartureDate}">
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="preferred_airport" class="form-label">Preferred Travel Airport</label>
+                <input type="text" class="form-control" id="preferred_airport" th:field="*{preferredTravelAirport}" placeholder="e.g., Mangluru, DEL, BOM">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="preferred_station" class="form-label">Preferred Travel Station</label>
+                <input type="text" class="form-control" id="preferred_station" th:field="*{preferredTravelStation}" placeholder="e.g., Kasaragod, NDLS, BCT">
               </div>
             </div>
 

@@ -1,4 +1,4 @@
-package com.momentsmanager.web;
+ package com.momentsmanager.web;
 
 import com.momentsmanager.model.WeddingEvent;
 import com.momentsmanager.repository.WeddingEventRepository;
@@ -50,8 +50,33 @@ public class EventWebController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/new")
-    public String createEvent(@ModelAttribute WeddingEvent event) {
+    public String createEvent(@ModelAttribute WeddingEvent event,
+                            org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes,
+                            Model model) {
+        // Validate subdomain is provided and unique
+        if (event.getSubdomain() == null || event.getSubdomain().trim().isEmpty()) {
+            model.addAttribute("event", event);
+            model.addAttribute("error", "Subdomain is required");
+            return "event_form";
+        }
+
+        // Check if subdomain is already taken
+        if (weddingEventRepository.findBySubdomain(event.getSubdomain()).isPresent()) {
+            model.addAttribute("event", event);
+            model.addAttribute("error", "Subdomain is already taken. Please choose a different one.");
+            return "event_form";
+        }
+
+        // Validate subdomain format (alphanumeric and hyphens only)
+        if (!event.getSubdomain().matches("^[a-z0-9-]+$")) {
+            model.addAttribute("event", event);
+            model.addAttribute("error", "Subdomain must contain only lowercase letters, numbers, and hyphens.");
+            return "event_form";
+        }
+
         weddingEventRepository.save(event);
+        redirectAttributes.addFlashAttribute("successMessage",
+                "Event created successfully! Public page: /public/" + event.getSubdomain());
         return "redirect:/events";
     }
 
@@ -66,6 +91,10 @@ public class EventWebController {
         return "redirect:/events";
     }
 
+    /**
+     * Edit event form - Admin only
+     * Hosts cannot edit events (prevents subdomain tampering)
+     */
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}/edit")
     public String editEvent(@PathVariable Long id, Model model) {
@@ -77,11 +106,27 @@ public class EventWebController {
         return "redirect:/events";
     }
 
+    /**
+     * Update event - Admin only
+     * Hosts cannot update events (prevents subdomain tampering)
+     * Subdomain is always preserved from the original event
+     */
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{id}/edit")
-    public String updateEvent(@PathVariable Long id, @ModelAttribute WeddingEvent event) {
-        event.setId(id);
-        weddingEventRepository.save(event);
+    public String updateEvent(@PathVariable Long id, @ModelAttribute WeddingEvent event,
+                            org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
+        Optional<WeddingEvent> existingOpt = weddingEventRepository.findById(id);
+        if (existingOpt.isPresent()) {
+            WeddingEvent existing = existingOpt.get();
+
+            // Prevent subdomain modification - keep the original subdomain
+            event.setId(id);
+            event.setSubdomain(existing.getSubdomain());
+
+            weddingEventRepository.save(event);
+            redirectAttributes.addFlashAttribute("successMessage", "Event updated successfully!");
+            return "redirect:/events/" + id;
+        }
         return "redirect:/events";
     }
 

@@ -65,6 +65,13 @@ public class MessageService {
     }
 
     /**
+     * Get unread messages count for an event (alias method for controller use)
+     */
+    public long getUnreadMessagesCount(Long eventId) {
+        return getUnreadCount(eventId);
+    }
+
+    /**
      * Get all messages from a specific guest in an event, paginated
      */
     public Page<GuestMessage> getGuestMessages(Long eventId, Long guestId, Pageable pageable) {
@@ -147,6 +154,13 @@ public class MessageService {
         List<GuestMessage> unreadMessages = guestMessageRepository.findByEventAndIsReadFalse(event);
         unreadMessages.forEach(GuestMessage::markAsRead);
         guestMessageRepository.saveAll(unreadMessages);
+    }
+
+    /**
+     * Mark all messages for an event as read (alias method)
+     */
+    public void markAllAsReadForEvent(Long eventId) {
+        markEventMessagesAsRead(eventId);
     }
 
     /**

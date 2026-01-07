@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <title>Events</title>
     <meta charset="UTF-8">
@@ -23,9 +24,12 @@
 <div class="container py-5">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>Wedding Events</h1>
-    <a href="/events/new" class="btn btn-success">
-      <i class="bi bi-plus-circle"></i> Add New Event
-    </a>
+    <!-- Add New Event button only for admins -->
+    <div sec:authorize="hasRole('ADMIN')">
+      <a href="/events/new" class="btn btn-success">
+        <i class="bi bi-plus-circle"></i> Add New Event
+      </a>
+    </div>
   </div>
 
   <!-- Events List -->
@@ -71,14 +75,17 @@
                   <a th:href="@{/events/{id}(id=${event.id})}" class="btn btn-sm btn-outline-primary" title="View Details">
                     <i class="bi bi-eye"></i>
                   </a>
-                  <a th:href="@{/events/{id}/edit(id=${event.id})}" class="btn btn-sm btn-outline-warning" title="Edit Event">
-                    <i class="bi bi-pencil"></i>
-                  </a>
-                  <button type="button" class="btn btn-sm btn-outline-danger" title="Delete Event"
-                          th:attr="data-event-id=${event.id},data-event-name=${event.name}"
-                          onclick="confirmDelete(this)">
-                    <i class="bi bi-trash"></i>
-                  </button>
+                  <!-- Edit and Delete buttons only for admins -->
+                  <span sec:authorize="hasRole('ADMIN')">
+                    <a th:href="@{/events/{id}/edit(id=${event.id})}" class="btn btn-sm btn-outline-warning" title="Edit Event">
+                      <i class="bi bi-pencil"></i>
+                    </a>
+                    <button type="button" class="btn btn-sm btn-outline-danger" title="Delete Event"
+                            th:attr="data-event-id=${event.id},data-event-name=${event.name}"
+                            onclick="confirmDelete(this)">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </span>
                 </div>
               </td>
             </tr>

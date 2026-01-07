@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -38,6 +40,16 @@ public class Guest {
     @Column(name = "max_attendees")
     private int maxAttendees;
 
+    @Column(name = "expected_arrival_date")
+    private LocalDate expectedArrivalDate;
+
+    @Column(name = "expected_departure_date")
+    private LocalDate expectedDepartureDate;
+
+    @Column(name = "expected_attendance")
+    @Enumerated(EnumType.STRING)
+    private ExpectedAttendance expectedAttendance;
+
     // Bidirectional relationship: Guest belongs to Event
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "event_id", nullable = false)
@@ -46,6 +58,10 @@ public class Guest {
     // Aggregation: Guest owns RSVP - cascade all operations, orphan removal enabled
     @OneToOne(mappedBy = "guest", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private RSVP rsvp;
+
+    // Travel information for this guest
+    @OneToOne(mappedBy = "guest", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private TravelInfo travelInfo;
 
     // Helper method to get eventId for backward compatibility
     public Long getEventId() {

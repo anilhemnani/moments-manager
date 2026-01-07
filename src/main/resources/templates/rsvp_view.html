@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <title>RSVP Details</title>
     <meta charset="UTF-8">
@@ -21,6 +22,18 @@
 </nav>
 
 <div class="container py-5">
+    <!-- Success Message -->
+    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle"></i> <span th:text="${successMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <!-- Error Message -->
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle"></i> <span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h1>RSVP Details</h1>
@@ -35,7 +48,7 @@
         </a>
     </div>
 
-    <!-- RSVP Status Card -->
+    <!-- RSVP Status Card with Update Option -->
     <div class="row mb-4">
         <div class="col-md-6">
             <div class="card shadow-sm">
@@ -49,6 +62,7 @@
                             <span th:if="${rsvp.status == 'Accepted'}" class="badge bg-success fs-6" th:text="${rsvp.status}"></span>
                             <span th:if="${rsvp.status == 'Pending'}" class="badge bg-warning fs-6" th:text="${rsvp.status}"></span>
                             <span th:if="${rsvp.status == 'Declined'}" class="badge bg-danger fs-6" th:text="${rsvp.status}"></span>
+                            <span th:if="${rsvp.status == 'Maybe'}" class="badge bg-info fs-6" th:text="${rsvp.status}"></span>
                         </dd>
 
                         <dt class="col-sm-4">Attendee Count:</dt>
@@ -57,6 +71,24 @@
                         <dt class="col-sm-4">Max Attendees:</dt>
                         <dd class="col-sm-8" th:text="${guest.maxAttendees}">0</dd>
                     </dl>
+
+                    <!-- Host Update RSVP Status Option -->
+                    <div sec:authorize="hasRole('HOST')" class="mt-4 pt-4 border-top">
+                        <h6><i class="bi bi-pencil-square"></i> Update RSVP Status</h6>
+                        <form th:action="@{/guests/{id}/rsvp/update-status(id=${guest.id})}" method="post" class="d-flex gap-2">
+                            <select name="status" class="form-select form-select-sm" required>
+                                <option value="">-- Select Status --</option>
+                                <option value="Pending" th:selected="${rsvp.status == 'Pending'}">Pending</option>
+                                <option value="Accepted" th:selected="${rsvp.status == 'Accepted'}">Accepted</option>
+                                <option value="Declined" th:selected="${rsvp.status == 'Declined'}">Declined</option>
+                                <option value="Maybe" th:selected="${rsvp.status == 'Maybe'}">Maybe</option>
+                            </select>
+                            <input type="hidden" name="eventId" th:value="${event.id}"/>
+                            <button type="submit" class="btn btn-sm btn-primary">
+                                <i class="bi bi-check-lg"></i> Update
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>

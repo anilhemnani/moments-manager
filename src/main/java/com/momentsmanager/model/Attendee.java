@@ -29,8 +29,4 @@ public class Attendee {
     @ManyToOne
     @JoinColumn(name = "rsvp_id")
     private RSVP rsvp;
-
-    @OneToOne(mappedBy = "attendee", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private TravelInfo travelInfo;
 }
-

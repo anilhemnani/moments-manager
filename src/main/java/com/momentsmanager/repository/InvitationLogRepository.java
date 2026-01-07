@@ -23,5 +23,17 @@ public interface InvitationLogRepository extends JpaRepository<InvitationLog, Lo
 
     @Query("SELECT COUNT(il) FROM InvitationLog il WHERE il.invitation.id = :invitationId AND il.deliveryStatus = :status")
     Long countByInvitationIdAndStatus(@Param("invitationId") Long invitationId, @Param("status") String status);
+
+    /**
+     * Find all invitation logs for a guest by phone number
+     */
+    @Query("SELECT il FROM InvitationLog il WHERE il.whatsappNumber = :phoneNumber")
+    List<InvitationLog> findByGuestPhoneNumber(@Param("phoneNumber") String phoneNumber);
+
+    /**
+     * Find invitation log by invitation ID and guest phone number
+     */
+    @Query("SELECT il FROM InvitationLog il WHERE il.invitation.id = :invitationId AND il.whatsappNumber = :phoneNumber")
+    Optional<InvitationLog> findByInvitationIdAndGuestPhoneNumber(@Param("invitationId") Long invitationId, @Param("phoneNumber") String phoneNumber);
 }
 

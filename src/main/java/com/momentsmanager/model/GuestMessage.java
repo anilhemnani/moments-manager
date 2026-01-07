@@ -145,4 +145,3 @@ public class GuestMessage {
         FAILED      // Message failed to send/receive
     }
 }
-

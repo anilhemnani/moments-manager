@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -18,15 +20,17 @@ public class TravelInfo {
     private Long id;
 
     @OneToOne
-    @JoinColumn(name = "attendee_id", unique = true)
-    private Attendee attendee;
+    @JoinColumn(name = "guest_id", unique = true)
+    private Guest guest;
 
     @Column(name = "arrival_mode")
-    private String arrivalMode; // Flight, Train, Car, Bus, etc.
+    @Enumerated(EnumType.STRING)
+    private ModeOfTravel arrivalMode; // Flight, Train, Car, Bus, etc.
 
     @Column(name = "arrival_date_time")
-    private String arrivalDateTime;
+    private LocalDateTime arrivalDateTime;
 
+    // Backwards-compatible field names used by service layer
     @Column(name = "arrival_flight_number")
     private String arrivalFlightNumber;
 
@@ -40,10 +44,11 @@ public class TravelInfo {
     private String arrivalStation;
 
     @Column(name = "departure_mode")
-    private String departureMode; // Flight, Train, Car, Bus, etc.
+    @Enumerated(EnumType.STRING)
+    private ModeOfTravel departureMode; // Flight, Train, Car, Bus, etc.
 
     @Column(name = "departure_date_time")
-    private String departureDateTime;
+    private LocalDateTime departureDateTime;
 
     @Column(name = "departure_flight_number")
     private String departureFlightNumber;
@@ -58,10 +63,10 @@ public class TravelInfo {
     private String departureStation;
 
     @Column(name = "needs_pickup")
-    private Boolean needsPickup;
+    private Boolean needsPickup = false;
 
     @Column(name = "needs_drop")
-    private Boolean needsDrop;
+    private Boolean needsDrop = false;
 
     @Column(name = "special_requirements")
     private String specialRequirements;
@@ -69,4 +74,3 @@ public class TravelInfo {
     @Column(name = "notes")
     private String notes;
 }
-

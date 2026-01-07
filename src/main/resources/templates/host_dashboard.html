@@ -3,63 +3,214 @@
 <th:block th:replace="~{_bootstrap_head :: head}"></th:block>
 <body class="bg-light">
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="/">Moments Manager</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link" href="/logout">Logout</a></li>
-      </ul>
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">Moments Manager</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" href="/logout">Logout</a></li>
+            </ul>
+        </div>
     </div>
-  </div>
 </nav>
-<div class="container py-5">
-  <h1 class="mb-4">Host Dashboard</h1>
-  <div class="row">
-    <div class="col-md-6 col-lg-4 mb-3">
-      <div class="card h-100">
-        <div class="card-body text-center">
-          <h5 class="card-title">My Events</h5>
-          <a href="/events" class="btn btn-outline-primary w-100">View/Update My Events</a>
+
+<div class="container-fluid py-4">
+    <h1 class="mb-4">Host Dashboard</h1>
+
+    <!-- Events Selection -->
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-calendar-event"></i> My Wedding Events</h5>
+                </div>
+                <div class="card-body">
+                    <div th:if="${events.isEmpty()}" class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> No events found. Please contact the administrator to assign events to your account.
+                    </div>
+
+                    <div th:if="${!events.isEmpty()}" class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Event Name</th>
+                                    <th>Couple</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th class="text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="event : ${events}">
+                                    <td>
+                                        <strong th:text="${event.name}">Event Name</strong>
+                                        <br>
+                                        <small class="text-muted" th:text="'Subdomain: ' + ${event.subdomain}"></small>
+                                    </td>
+                                    <td th:text="${event.brideName} + ' & ' + ${event.groomName}">Bride & Groom</td>
+                                    <td>
+                                        <i class="bi bi-calendar3"></i>
+                                        <span th:text="${event.date}">Date</span>
+                                    </td>
+                                    <td>
+                                        <span th:if="${event.status == 'Published'}" class="badge bg-success" th:text="${event.status}">Published</span>
+                                        <span th:if="${event.status == 'Draft'}" class="badge bg-secondary" th:text="${event.status}">Draft</span>
+                                        <span th:if="${event.status != 'Published' && event.status != 'Draft'}" class="badge bg-info" th:text="${event.status}">Status</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="collapse"
+                                                th:data-bs-target="'#event-' + ${event.id}">
+                                            <i class="bi bi-chevron-down"></i> Manage
+                                        </button>
+                                    </td>
+                                </tr>
+                                <!-- Event Details Row -->
+                                <tr th:each="event : ${events}">
+                                    <td colspan="5">
+                                        <div th:id="'event-' + ${event.id}" class="collapse">
+                                            <div class="card card-body bg-light mt-2">
+                                                <!-- Event Management Actions -->
+                                                <div class="row g-2">
+                                                    <!-- Guests -->
+                                                    <div class="col-md-6 col-lg-4">
+                                                        <div class="card h-100 border-primary">
+                                                            <div class="card-body">
+                                                                <h6 class="card-title"><i class="bi bi-people"></i> Guests</h6>
+                                                                <p class="card-text text-muted small">Manage guest list</p>
+                                                                <a th:href="@{/guests(eventId=${event.id})}" class="btn btn-sm btn-outline-primary w-100">
+                                                                    View/Add Guests
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Hosts -->
+                                                    <div class="col-md-6 col-lg-4">
+                                                        <div class="card h-100 border-primary">
+                                                            <div class="card-body">
+                                                                <h6 class="card-title"><i class="bi bi-person-check"></i> Hosts</h6>
+                                                                <p class="card-text text-muted small">Co-hosts & managers</p>
+                                                                <a th:href="@{/hosts(eventId=${event.id})}" class="btn btn-sm btn-outline-primary w-100">
+                                                                    View/Add Hosts
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Invitations -->
+                                                    <div class="col-md-6 col-lg-4">
+                                                        <div class="card h-100 border-primary">
+                                                            <div class="card-body">
+                                                                <h6 class="card-title"><i class="bi bi-envelope"></i> Invitations</h6>
+                                                                <p class="card-text text-muted small">Send & manage</p>
+                                                                <a th:href="@{/invitations(eventId=${event.id})}" class="btn btn-sm btn-outline-primary w-100">
+                                                                    Send/View
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- RSVPs -->
+                                                    <div class="col-md-6 col-lg-4">
+                                                        <div class="card h-100 border-success">
+                                                            <div class="card-body">
+                                                                <h6 class="card-title"><i class="bi bi-check-circle"></i> RSVPs</h6>
+                                                                <p class="card-text text-muted small">Responses & confirmations</p>
+                                                                <a th:href="@{/rsvps(eventId=${event.id})}" class="btn btn-sm btn-outline-success w-100">
+                                                                    View RSVPs
+                                                                </a>
+                                                                <a th:href="@{/rsvps/report(eventId=${event.id})}" class="btn btn-sm btn-outline-success w-100 mt-2">
+                                                                    RSVP Report
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Messages -->
+                                                    <div class="col-md-6 col-lg-4">
+                                                        <div class="card h-100 border-info">
+                                                            <div class="card-body">
+                                                                <h6 class="card-title"><i class="bi bi-chat-dots"></i> Messages</h6>
+                                                                <p class="card-text text-muted small">WhatsApp messages</p>
+                                                                <a th:href="@{/host/messages(eventId=${event.id})}" class="btn btn-sm btn-outline-info w-100">
+                                                                    View Messages
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Travel Info -->
+                                                    <div class="col-md-6 col-lg-4">
+                                                        <div class="card h-100 border-warning">
+                                                            <div class="card-body">
+                                                                <h6 class="card-title"><i class="bi bi-airplane"></i> Travel Info</h6>
+                                                                <p class="card-text text-muted small">Guest arrival & departure</p>
+                                                                <a th:href="@{/host/travel-info(eventId=${event.id})}" class="btn btn-sm btn-outline-warning w-100">
+                                                                    Manage Travel
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- WhatsApp Config -->
+                                                    <div class="col-md-6 col-lg-4">
+                                                        <div class="card h-100 border-success">
+                                                            <div class="card-body">
+                                                                <h6 class="card-title"><i class="bi bi-whatsapp"></i> WhatsApp</h6>
+                                                                <p class="card-text text-muted small">API configuration</p>
+                                                                <a th:href="@{/events/{id}/whatsapp-config(id=${event.id})}" class="btn btn-sm btn-outline-success w-100">
+                                                                    Configure
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- View Event Details -->
+                                                    <div class="col-md-6 col-lg-4">
+                                                        <div class="card h-100 border-secondary">
+                                                            <div class="card-body">
+                                                                <h6 class="card-title"><i class="bi bi-eye"></i> Details</h6>
+                                                                <p class="card-text text-muted small">Event information</p>
+                                                                <a th:href="@{/events/{id}(id=${event.id})}" class="btn btn-sm btn-outline-secondary w-100">
+                                                                    View Event
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
     </div>
-    <div class="col-md-6 col-lg-4 mb-3">
-      <div class="card h-100">
-        <div class="card-body text-center">
-          <h5 class="card-title">Hosts</h5>
-          <a href="/hosts" class="btn btn-outline-primary w-100">Add/View Hosts</a>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-6 col-lg-4 mb-3">
-      <div class="card h-100">
-        <div class="card-body text-center">
-          <h5 class="card-title">Guests</h5>
-          <a href="/guests" class="btn btn-outline-primary w-100">Add/View Guests</a>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-6 col-lg-4 mb-3">
-      <div class="card h-100">
-        <div class="card-body text-center">
-          <h5 class="card-title">Invitations</h5>
-          <a href="/invitations" class="btn btn-outline-primary w-100">Send/View Invitations</a>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-6 col-lg-4 mb-3">
-      <div class="card h-100">
-        <div class="card-body text-center">
-          <h5 class="card-title">RSVPs</h5>
-          <a href="/rsvps" class="btn btn-outline-primary w-100">View RSVPs</a>
-          <a href="/rsvps/report" class="btn btn-outline-secondary w-100 mt-2">RSVP Report</a>
-        </div>
-      </div>
-    </div>
-  </div>
 </div>
+
+<style>
+    .collapse:not(.show) {
+        display: none;
+    }
+
+    .card {
+        transition: box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .border-primary { border-left: 4px solid #0d6efd; }
+    .border-success { border-left: 4px solid #198754; }
+    .border-info { border-left: 4px solid #0dcaf0; }
+    .border-warning { border-left: 4px solid #ffc107; }
+    .border-secondary { border-left: 4px solid #6c757d; }
+</style>
 </body>
 </html>

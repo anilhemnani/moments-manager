@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Wedding Invitation</title>
+    <meta charset="UTF-8">
+    <th:block th:replace="~{_bootstrap_head :: head}"></th:block>
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">Moments Manager</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" href="/invitations">My Invitations</a></li>
+                <li class="nav-item"><a class="nav-link" href="/logout">Logout</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Invitation Card -->
+            <div class="card shadow-lg mb-4">
+                <!-- Invitation Image (if available) -->
+                <div th:if="${invitation.imageUrl}" class="card-img-top"
+                     style="height: 300px; object-fit: cover; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center;">
+                    <img th:src="${invitation.imageUrl}" alt="Invitation" style="max-width: 100%; max-height: 100%; object-fit: cover;">
+                </div>
+
+                <div class="card-body p-5">
+                    <!-- Event Header -->
+                    <div class="text-center mb-5">
+                        <h1 th:text="${event.name}" class="display-5">Wedding Name</h1>
+                        <p class="lead text-muted">
+                            <span th:text="${event.brideName} + ' &amp; ' + ${event.groomName}">Couple</span>
+                        </p>
+                    </div>
+
+                    <!-- Invitation Details -->
+                    <div class="mb-5">
+                        <h3 class="mb-3" th:text="${invitation.title}">Invitation Title</h3>
+                        <div class="alert alert-info" role="alert" th:if="${invitation.message}">
+                            <p th:text="${invitation.message}" class="mb-0"></p>
+                        </div>
+                    </div>
+
+                    <!-- Event Information -->
+                    <div class="row mb-5">
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title"><i class="bi bi-calendar-event"></i> Wedding Date</h5>
+                                    <p class="card-text" th:text="${event.date}">Date</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title"><i class="bi bi-geo-alt"></i> Location</h5>
+                                    <p class="card-text" th:text="${event.place ?: 'TBD'}">Location</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Guest Information -->
+                    <div class="card bg-light mb-5">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="bi bi-info-circle"></i> Event Details</h5>
+                        </div>
+                        <div class="card-body">
+                            <dl class="row">
+                                <dt class="col-sm-4">Bride:</dt>
+                                <dd class="col-sm-8" th:text="${event.brideName}">Bride Name</dd>
+
+                                <dt class="col-sm-4">Groom:</dt>
+                                <dd class="col-sm-8" th:text="${event.groomName}">Groom Name</dd>
+
+                                <dt class="col-sm-4">Event Check-In Date</dt>
+                                <dd class="col-sm-8" th:text="${event.expectedGuestArrivalDate ?: 'TBD'}">Arrival</dd>
+
+                                <dt class="col-sm-4">Event Checkout Date:</dt>
+                                <dd class="col-sm-8" th:text="${event.expectedGuestDepartureDate ?: 'TBD'}">Departure</dd>
+                            </dl>
+                        </div>
+                    </div>
+
+                    <!-- RSVP Status Section -->
+                    <div class="card mb-5">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0"><i class="bi bi-calendar-check"></i> RSVP Status</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <p class="text-muted">Current Status:</p>
+                                    <span th:if="${rsvp.status == 'Accepted'}" class="badge bg-success fs-6" th:text="${rsvp.status}"></span>
+                                    <span th:if="${rsvp.status == 'Pending'}" class="badge bg-warning fs-6" th:text="${rsvp.status}"></span>
+                                    <span th:if="${rsvp.status == 'Declined'}" class="badge bg-danger fs-6" th:text="${rsvp.status}"></span>
+                                    <span th:if="${rsvp.status == 'Maybe'}" class="badge bg-info fs-6" th:text="${rsvp.status}"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="text-muted">Attendees: <span th:text="${rsvp.attendeeCount}">0</span> / <span th:text="${guest.maxAttendees}">5</span></p>
+                                </div>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <a th:href="@{/invitations/rsvp/form(guestId=${guest.id},eventId=${event.id})}" class="btn btn-primary">
+                                    <i class="bi bi-pencil-square"></i> Update RSVP
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Attendees Section -->
+                    <div class="card mb-5">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0"><i class="bi bi-people-fill"></i> Attendees</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted mb-3">Manage who from your family will attend the wedding.</p>
+                            <div class="d-grid gap-2">
+                                <a th:href="@{/invitations/attendees(guestId=${guest.id},eventId=${event.id})}" class="btn btn-info">
+                                    <i class="bi bi-person-plus"></i> Add/Manage Attendees
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Travel Information Section -->
+                    <div class="card mb-5">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="mb-0"><i class="bi bi-airplane"></i> Travel Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted mb-3">Share your travel details (flight/train info, arrival/departure times, etc.)</p>
+                            <div class="d-grid gap-2">
+                                <a th:href="@{/invitations/travel-info(guestId=${guest.id},eventId=${event.id})}" class="btn btn-warning">
+                                    <i class="bi bi-pencil-square"></i> Update Travel Details
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Next Steps -->
+                    <div class="alert alert-success" role="alert">
+                        <h5 class="alert-heading"><i class="bi bi-check-circle"></i> Next Steps</h5>
+                        <ol class="mb-0">
+                            <li>Update your RSVP status (Accepted, Declined, Maybe)</li>
+                            <li>Add attendees from your family/group</li>
+                            <li>Share your travel details (flight, train, arrival time)</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="text-center">
+                <a href="/invitations" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Invitations
+                </a>
+                <a href="/" class="btn btn-outline-primary">
+                    <i class="bi bi-house"></i> Home
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

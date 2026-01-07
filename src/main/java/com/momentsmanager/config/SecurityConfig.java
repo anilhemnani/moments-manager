@@ -7,6 +7,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.AuthenticationEntryPoint;
 
@@ -23,17 +24,36 @@ public class SecurityConfig {
     public AuthenticationEntryPoint customAuthenticationEntryPoint() {
         return (request, response, authException) -> {
             String requestUri = request.getRequestURI();
+            String redirectUrl = "/login";
 
-            // Redirect to appropriate login page based on the requested resource
+            // First, try to redirect based on the requested resource
             if (requestUri.startsWith("/admin")) {
-                response.sendRedirect("/login/admin");
+                redirectUrl = "/login/admin";
             } else if (requestUri.startsWith("/host")) {
-                response.sendRedirect("/login/host");
+                redirectUrl = "/login/host";
             } else if (requestUri.startsWith("/guest")) {
-                response.sendRedirect("/login/guest");
+                redirectUrl = "/login/guest";
             } else {
-                response.sendRedirect("/");
+                // If no specific role path, check for previous role cookie
+                jakarta.servlet.http.Cookie[] cookies = request.getCookies();
+                if (cookies != null) {
+                    for (jakarta.servlet.http.Cookie cookie : cookies) {
+                        if ("lastUserRole".equals(cookie.getName())) {
+                            String lastRole = cookie.getValue();
+                            if ("ADMIN".equals(lastRole)) {
+                                redirectUrl = "/login/admin";
+                            } else if ("HOST".equals(lastRole)) {
+                                redirectUrl = "/login/host";
+                            } else if ("GUEST".equals(lastRole)) {
+                                redirectUrl = "/login/guest";
+                            }
+                            break;
+                        }
+                    }
+                }
             }
+
+            response.sendRedirect(redirectUrl);
         };
     }
 
@@ -42,14 +62,45 @@ public class SecurityConfig {
         return new AuthenticationSuccessHandler() {
             @Override
             public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+                // Determine user role and set cookie
+                String userRole = "GUEST";
+                String redirectUrl = "/guest/dashboard";
+
                 if (authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"))) {
-                    response.sendRedirect("/admin/dashboard");
+                    userRole = "ADMIN";
+                    redirectUrl = "/admin/dashboard";
                 } else if (authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_HOST"))) {
-                    response.sendRedirect("/host/dashboard");
-                } else {
-                    response.sendRedirect("/guest/dashboard");
+                    userRole = "HOST";
+                    redirectUrl = "/host/dashboard";
+                }
+
+                // Store the user's role in a cookie for future redirects
+                jakarta.servlet.http.Cookie roleCooke = new jakarta.servlet.http.Cookie("lastUserRole", userRole);
+                roleCooke.setPath("/");
+                roleCooke.setMaxAge(30 * 24 * 60 * 60); // 30 days
+                roleCooke.setHttpOnly(true);
+                response.addCookie(roleCooke);
+
+                response.sendRedirect(redirectUrl);
+            }
+        };
+    }
+
+    @Bean
+    public AccessDeniedHandler customAccessDeniedHandler() {
+        return (request, response, accessDeniedException) -> {
+            // Clear all cookies
+            jakarta.servlet.http.Cookie[] cookies = request.getCookies();
+            if (cookies != null) {
+                for (jakarta.servlet.http.Cookie cookie : cookies) {
+                    cookie.setMaxAge(0);
+                    cookie.setPath("/");
+                    response.addCookie(cookie);
                 }
             }
+
+            // Redirect to login
+            response.sendRedirect("/login");
         };
     }
 
@@ -57,7 +108,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/login/**", "/register", "/css/**", "/js/**", "/set-password", "/set-password-host").permitAll()
+                .requestMatchers("/", "/login/**", "/register", "/css/**", "/js/**", "/set-password", "/set-password-host", "/public/**", "/api/whatsapp/webhook/**").permitAll()
                 .requestMatchers("/h2-console/**").hasRole("ADMIN")  // Protect H2 console - admin only
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/host/**").hasRole("HOST")
@@ -82,6 +133,8 @@ public class SecurityConfig {
             .logout(logout -> logout
                 .logoutUrl("/logout")
                 .logoutSuccessUrl("/")
+                .invalidateHttpSession(true)  // Invalidate session on logout
+                .deleteCookies("JSESSIONID", "lastUserRole")  // Delete session and role cookies
                 .invalidateHttpSession(true)  // Invalidate session on logout
                 .deleteCookies("JSESSIONID")  // Delete session cookie
                 .permitAll()

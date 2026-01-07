@@ -5,18 +5,20 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
 
+    <!-- 1. role_tbl (Role.id is not auto-generated in the entity) -->
     <changeSet id="1-create-role-table" author="auto">
         <createTable tableName="role_tbl">
-            <column name="id" type="BIGINT" autoIncrement="true">
+            <column name="id" type="BIGINT">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="name" type="VARCHAR(255)"/>
         </createTable>
     </changeSet>
 
+    <!-- 2. app_user_tbl (User.id is not auto-generated in the entity) -->
     <changeSet id="2-create-app-user-table" author="auto">
         <createTable tableName="app_user_tbl">
-            <column name="id" type="BIGINT" autoIncrement="true">
+            <column name="id" type="BIGINT">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="username" type="VARCHAR(255)"/>
@@ -27,6 +29,7 @@
         </createTable>
     </changeSet>
 
+    <!-- 3. user_roles_tbl -->
     <changeSet id="3-create-user-roles-table" author="auto">
         <createTable tableName="user_roles_tbl">
             <column name="id" type="BIGINT" autoIncrement="true">
@@ -35,22 +38,69 @@
             <column name="user_id" type="BIGINT"/>
             <column name="role_id" type="BIGINT"/>
         </createTable>
+        <addForeignKeyConstraint baseTableName="user_roles_tbl" baseColumnNames="user_id"
+                                  referencedTableName="app_user_tbl" referencedColumnNames="id"
+                                  constraintName="fk_userroles_user" onDelete="CASCADE"/>
+        <addForeignKeyConstraint baseTableName="user_roles_tbl" baseColumnNames="role_id"
+                                  referencedTableName="role_tbl" referencedColumnNames="id"
+                                  constraintName="fk_userroles_role" onDelete="CASCADE"/>
     </changeSet>
 
+    <!-- 4. wedding_event_tbl -->
     <changeSet id="4-create-wedding-event-table" author="auto">
         <createTable tableName="wedding_event_tbl">
             <column name="id" type="BIGINT" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="name" type="VARCHAR(255)"/>
+            <!-- now using DATE for LocalDate -->
             <column name="date" type="DATE"/>
             <column name="status" type="VARCHAR(255)"/>
             <column name="bride_name" type="VARCHAR(255)"/>
             <column name="groom_name" type="VARCHAR(255)"/>
+            <column name="subdomain" type="VARCHAR(50)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="expected_guest_arrival_date" type="DATE"/>
+            <column name="expected_guest_departure_date" type="DATE"/>
+            <column name="preferred_travel_airport" type="VARCHAR(255)"/>
+            <column name="preferred_travel_station" type="VARCHAR(255)"/>
+            <column name="preferred_expected_attendees" type="INT"/>
+            <column name="place" type="VARCHAR(255)"/>
+            <column name="expected_max_attendees" type="INT"/>
+            <column name="expected_attendees" type="INT"/>
+            <column name="whatsapp_api_enabled" type="BOOLEAN" defaultValueBoolean="false"/>
+            <column name="whatsapp_phone_number_id" type="VARCHAR(255)"/>
+            <column name="whatsapp_business_account_id" type="VARCHAR(255)"/>
+            <column name="whatsapp_access_token" type="VARCHAR(512)"/>
+            <column name="whatsapp_api_version" type="VARCHAR(50)" defaultValue="v24.0"/>
+            <column name="whatsapp_verify_token" type="VARCHAR(255)"/>
         </createTable>
     </changeSet>
 
-    <changeSet id="5-create-guest-table" author="auto">
+    <!-- 5. host_tbl -->
+    <changeSet id="5-create-host-table" author="auto">
+        <createTable tableName="host_tbl">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="username" type="VARCHAR(255)"/>
+            <column name="password" type="VARCHAR(255)"/>
+            <column name="email" type="VARCHAR(255)"/>
+            <column name="phone" type="VARCHAR(50)"/>
+            <column name="provider" type="VARCHAR(255)"/>
+            <column name="role" type="VARCHAR(255)"/>
+            <column name="event_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="host_tbl" baseColumnNames="event_id"
+                                  referencedTableName="wedding_event_tbl" referencedColumnNames="id"
+                                  constraintName="fk_host_event" onDelete="CASCADE"/>
+    </changeSet>
+
+    <!-- 6. guest_tbl -->
+    <changeSet id="6-create-guest-table" author="auto">
         <createTable tableName="guest_tbl">
             <column name="id" type="BIGINT" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
@@ -58,130 +108,25 @@
             <column name="family_name" type="VARCHAR(255)"/>
             <column name="contact_name" type="VARCHAR(255)"/>
             <column name="contact_email" type="VARCHAR(255)"/>
-            <column name="contact_phone" type="VARCHAR(255)"/>
+            <column name="contact_phone" type="VARCHAR(50)"/>
             <column name="side" type="VARCHAR(255)"/>
-            <column name="address" type="VARCHAR(255)"/>
+            <column name="address" type="VARCHAR(1024)"/>
             <column name="max_attendees" type="INT"/>
+            <column name="expected_arrival_date" type="DATE"/>
+            <column name="expected_departure_date" type="DATE"/>
+            <!-- ExpectedAttendance now stored as STRING -->
+            <column name="expected_attendance" type="VARCHAR(50)"/>
             <column name="event_id" type="BIGINT"/>
         </createTable>
+        <addForeignKeyConstraint baseTableName="guest_tbl" baseColumnNames="event_id"
+                                  referencedTableName="wedding_event_tbl" referencedColumnNames="id"
+                                  constraintName="fk_guest_event" onDelete="CASCADE"/>
+        <!-- Unique constraint: contact_email per event -->
+        <addUniqueConstraint tableName="guest_tbl" columnNames="contact_email, event_id" constraintName="uk_guest_contact_email_event"/>
     </changeSet>
 
-    <changeSet id="6-create-host-table" author="auto">
-        <createTable tableName="host_tbl">
-            <column name="id" type="BIGINT" autoIncrement="true">
-                <constraints primaryKey="true" nullable="false"/>
-            </column>
-            <column name="name" type="VARCHAR(255)"/>
-            <column name="email" type="VARCHAR(255)"/>
-            <column name="phone" type="VARCHAR(255)"/>
-            <column name="event_id" type="BIGINT"/>
-        </createTable>
-    </changeSet>
-
-    <changeSet id="7-insert-initial-data" author="auto">
-        <insert tableName="role_tbl">
-            <column name="id" valueNumeric="1"/>
-            <column name="name" value="ROLE_ADMIN"/>
-        </insert>
-        <insert tableName="role_tbl">
-            <column name="id" valueNumeric="2"/>
-            <column name="name" value="ROLE_HOST"/>
-        </insert>
-        <insert tableName="role_tbl">
-            <column name="id" valueNumeric="3"/>
-            <column name="name" value="ROLE_GUEST"/>
-        </insert>
-        <!-- Remove any existing admin user -->
-        <delete tableName="user_roles_tbl">
-            <where>user_id = 1</where>
-        </delete>
-        <delete tableName="app_user_tbl">
-            <where>username = 'admin'</where>
-        </delete>
-        <!-- Insert new admin user -->
-        <insert tableName="app_user_tbl">
-            <column name="id" valueNumeric="1"/>
-            <column name="username" value="admin"/>
-            <column name="password" value=""/>
-            <column name="email" value="admin@moments-manager.com"/>
-            <column name="provider" value="local"/>
-            <column name="role" value="ROLE_ADMIN"/>
-        </insert>
-        <insert tableName="app_user_tbl">
-            <column name="id" valueNumeric="2"/>
-            <column name="username" value="host1"/>
-            <column name="password" value="$2a$10$7QJQwQwQwQwQwQwQwQwOeQwQwQwQwQwQwQwQwQwQwQwQwQwQwQwQw"/>
-            <column name="email" value="host1@example.com"/>
-            <column name="provider" value="local"/>
-            <column name="role" value="ROLE_HOST"/>
-        </insert>
-        <insert tableName="app_user_tbl">
-            <column name="id" valueNumeric="3"/>
-            <column name="username" value="host2"/>
-            <column name="password" value="$2a$10$7QJQwQwQwQwQwQwQwQwQwOeQwQwQwQwQwQwQwQwQwQwQwQwQwQwQwQw"/>
-            <column name="email" value="host2@example.com"/>
-            <column name="provider" value="local"/>
-            <column name="role" value="ROLE_HOST"/>
-        </insert>
-        <insert tableName="user_roles_tbl">
-            <column name="user_id" valueNumeric="1"/>
-            <column name="role_id" valueNumeric="1"/>
-        </insert>
-        <insert tableName="user_roles_tbl">
-            <column name="user_id" valueNumeric="2"/>
-            <column name="role_id" valueNumeric="2"/>
-        </insert>
-        <insert tableName="user_roles_tbl">
-            <column name="user_id" valueNumeric="3"/>
-            <column name="role_id" valueNumeric="2"/>
-        </insert>
-        <insert tableName="wedding_event_tbl">
-            <column name="id" valueNumeric="1"/>
-            <column name="name" value="Ravi &amp; Meera Wedding"/>
-            <column name="date" valueDate="2025-01-15"/>
-            <column name="status" value="Published"/>
-            <column name="bride_name" value="Meera"/>
-            <column name="groom_name" value="Ravi"/>
-        </insert>
-        <insert tableName="guest_tbl">
-            <column name="id" valueNumeric="1"/>
-            <column name="family_name" value="Sharma"/>
-            <column name="contact_name" value="Ravi Sharma"/>
-            <column name="contact_email" value="ravi.sharma@example.com"/>
-            <column name="contact_phone" value="+91 9876543210"/>
-            <column name="side" value="Bride"/>
-            <column name="address" value="Delhi"/>
-            <column name="max_attendees" valueNumeric="5"/>
-            <column name="event_id" valueNumeric="1"/>
-        </insert>
-        <insert tableName="guest_tbl">
-            <column name="id" valueNumeric="2"/>
-            <column name="family_name" value="Patel"/>
-            <column name="contact_name" value="Meera Patel"/>
-            <column name="contact_email" value="meera.patel@example.com"/>
-            <column name="contact_phone" value="+91 9123456780"/>
-            <column name="side" value="Groom"/>
-            <column name="address" value="Mumbai"/>
-            <column name="max_attendees" valueNumeric="4"/>
-            <column name="event_id" valueNumeric="1"/>
-        </insert>
-        <insert tableName="host_tbl">
-            <column name="id" valueNumeric="1"/>
-            <column name="name" value="Host One"/>
-            <column name="email" value="host1@example.com"/>
-            <column name="phone" value="+91 9000000001"/>
-            <column name="event_id" valueNumeric="1"/>
-        </insert>
-        <insert tableName="host_tbl">
-            <column name="id" valueNumeric="2"/>
-            <column name="name" value="Host Two"/>
-            <column name="email" value="host2@example.com"/>
-            <column name="phone" value="+91 9000000002"/>
-            <column name="event_id" valueNumeric="1"/>
-        </insert>
-    </changeSet>
-
-    <changeSet id="8-create-rsvp-table" author="auto">
+    <!-- 7. rsvp_tbl -->
+    <changeSet id="7-create-rsvp-table" author="auto">
         <createTable tableName="rsvp_tbl">
             <column name="id" type="BIGINT" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
@@ -193,103 +138,66 @@
             <column name="status" type="VARCHAR(50)" defaultValue="Pending"/>
             <column name="attendee_count" type="INT" defaultValueNumeric="0"/>
         </createTable>
-        <addForeignKeyConstraint
-            baseTableName="rsvp_tbl"
-            baseColumnNames="guest_id"
-            constraintName="fk_rsvp_guest"
-            referencedTableName="guest_tbl"
-            referencedColumnNames="id"
-            onDelete="CASCADE"/>
+        <addForeignKeyConstraint baseTableName="rsvp_tbl" baseColumnNames="guest_id"
+                                  referencedTableName="guest_tbl" referencedColumnNames="id"
+                                  constraintName="fk_rsvp_guest" onDelete="CASCADE"/>
     </changeSet>
 
-    <changeSet id="9-insert-rsvp-for-existing-guests" author="auto">
-        <insert tableName="rsvp_tbl">
-            <column name="guest_id" valueNumeric="1"/>
-            <column name="event_id" valueNumeric="1"/>
-            <column name="status" value="Pending"/>
-            <column name="attendee_count" valueNumeric="0"/>
-        </insert>
-        <insert tableName="rsvp_tbl">
-            <column name="guest_id" valueNumeric="2"/>
-            <column name="event_id" valueNumeric="1"/>
-            <column name="status" value="Pending"/>
-            <column name="attendee_count" valueNumeric="0"/>
-        </insert>
-    </changeSet>
-
-    <changeSet id="10-add-wedding-event-new-columns" author="auto">
-        <addColumn tableName="wedding_event_tbl">
-            <column name="expected_guest_arrival_date_time" type="VARCHAR(255)"/>
-            <column name="expected_guest_departure_date_time" type="VARCHAR(255)"/>
-            <column name="preferred_airport_arrival" type="VARCHAR(255)"/>
-            <column name="preferred_station_arrival" type="VARCHAR(255)"/>
-            <column name="preferred_expected_attendees" type="INT"/>
-            <column name="place" type="VARCHAR(255)"/>
-            <column name="expected_arrival_date_time" type="VARCHAR(255)"/>
-            <column name="expected_departure_date_time" type="VARCHAR(255)"/>
-            <column name="expected_max_attendees" type="INT"/>
-            <column name="expected_attendees" type="INT"/>
-            <column name="expected_attendance_yes" type="BOOLEAN"/>
-            <column name="expected_attendance_no" type="BOOLEAN"/>
-            <column name="expected_attendance_may_be" type="BOOLEAN"/>
-            <column name="expected_attendance_to_be_invited" type="BOOLEAN"/>
-        </addColumn>
-    </changeSet>
-
-    <changeSet id="11-create-attendee-table" author="auto">
+    <!-- 8. attendee_tbl -->
+    <changeSet id="8-create-attendee-table" author="auto">
         <createTable tableName="attendee_tbl">
             <column name="id" type="BIGINT" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="name" type="VARCHAR(255)"/>
-            <column name="mobile_number" type="VARCHAR(20)"/>
+            <column name="mobile_number" type="VARCHAR(50)"/>
             <column name="age_group" type="VARCHAR(50)"/>
             <column name="rsvp_id" type="BIGINT"/>
         </createTable>
-        <addForeignKeyConstraint
-            baseTableName="attendee_tbl"
-            baseColumnNames="rsvp_id"
-            constraintName="fk_attendee_rsvp"
-            referencedTableName="rsvp_tbl"
-            referencedColumnNames="id"
-            onDelete="CASCADE"/>
+        <addForeignKeyConstraint baseTableName="attendee_tbl" baseColumnNames="rsvp_id"
+                                  referencedTableName="rsvp_tbl" referencedColumnNames="id"
+                                  constraintName="fk_attendee_rsvp" onDelete="CASCADE"/>
     </changeSet>
 
-    <changeSet id="12-create-travel-info-table" author="auto">
+    <!-- 9. travel_info_tbl -->
+    <changeSet id="9-create-travel-info-table" author="auto">
         <createTable tableName="travel_info_tbl">
             <column name="id" type="BIGINT" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
-            <column name="attendee_id" type="BIGINT">
+            <column name="guest_id" type="BIGINT">
                 <constraints unique="true" nullable="false"/>
             </column>
+            <!-- ModeOfTravel now stored as STRING -->
             <column name="arrival_mode" type="VARCHAR(50)"/>
-            <column name="arrival_date_time" type="VARCHAR(255)"/>
-            <column name="arrival_flight_number" type="VARCHAR(50)"/>
-            <column name="arrival_train_number" type="VARCHAR(50)"/>
+            <column name="arrival_date_time" type="TIMESTAMP"/>
+            <column name="arrival_flight_number" type="VARCHAR(255)"/>
+            <column name="arrival_train_number" type="VARCHAR(255)"/>
             <column name="arrival_airport" type="VARCHAR(255)"/>
             <column name="arrival_station" type="VARCHAR(255)"/>
+            <column name="arrival_pnr_number" type="VARCHAR(255)"/>
+            <column name="arrival_port" type="VARCHAR(255)"/>
+            <!-- ModeOfTravel now stored as STRING -->
             <column name="departure_mode" type="VARCHAR(50)"/>
-            <column name="departure_date_time" type="VARCHAR(255)"/>
-            <column name="departure_flight_number" type="VARCHAR(50)"/>
-            <column name="departure_train_number" type="VARCHAR(50)"/>
+            <column name="departure_date_time" type="TIMESTAMP"/>
+            <column name="departure_flight_number" type="VARCHAR(255)"/>
+            <column name="departure_train_number" type="VARCHAR(255)"/>
             <column name="departure_airport" type="VARCHAR(255)"/>
             <column name="departure_station" type="VARCHAR(255)"/>
+            <column name="departure_pnr_number" type="VARCHAR(255)"/>
+            <column name="departure_port" type="VARCHAR(255)"/>
             <column name="needs_pickup" type="BOOLEAN" defaultValueBoolean="false"/>
             <column name="needs_drop" type="BOOLEAN" defaultValueBoolean="false"/>
-            <column name="special_requirements" type="VARCHAR(500)"/>
+            <column name="special_requirements" type="VARCHAR(1000)"/>
             <column name="notes" type="VARCHAR(1000)"/>
         </createTable>
-        <addForeignKeyConstraint
-            baseTableName="travel_info_tbl"
-            baseColumnNames="attendee_id"
-            constraintName="fk_travel_info_attendee"
-            referencedTableName="attendee_tbl"
-            referencedColumnNames="id"
-            onDelete="CASCADE"/>
+        <addForeignKeyConstraint baseTableName="travel_info_tbl" baseColumnNames="guest_id"
+                                  referencedTableName="guest_tbl" referencedColumnNames="id"
+                                  constraintName="fk_travel_info_guest" onDelete="CASCADE"/>
     </changeSet>
 
-    <changeSet id="13-create-invitation-table" author="auto">
+    <!-- 10. invitation_tbl -->
+    <changeSet id="10-create-invitation-table" author="auto">
         <createTable tableName="invitation_tbl">
             <column name="id" type="BIGINT" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
@@ -300,25 +208,23 @@
             <column name="title" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
-            <column name="message" type="TEXT">
-                <constraints nullable="false"/>
-            </column>
-            <column name="invitation_type" type="VARCHAR(50)"/>
-            <column name="image_url" type="VARCHAR(500)"/>
+            <column name="message" type="TEXT"/>
+            <column name="invitation_type" type="VARCHAR(255)"/>
+            <column name="image_url" type="VARCHAR(1024)"/>
+            <column name="message_type" type="VARCHAR(50)" defaultValue="TEMPLATE"/>
+            <column name="template_name" type="VARCHAR(255)"/>
+            <column name="template_language" type="VARCHAR(20)" defaultValue="en_US"/>
             <column name="created_at" type="TIMESTAMP"/>
             <column name="created_by" type="VARCHAR(255)"/>
             <column name="status" type="VARCHAR(50)" defaultValue="DRAFT"/>
         </createTable>
-        <addForeignKeyConstraint
-            baseTableName="invitation_tbl"
-            baseColumnNames="event_id"
-            constraintName="fk_invitation_event"
-            referencedTableName="wedding_event_tbl"
-            referencedColumnNames="id"
-            onDelete="CASCADE"/>
+        <addForeignKeyConstraint baseTableName="invitation_tbl" baseColumnNames="event_id"
+                                  referencedTableName="wedding_event_tbl" referencedColumnNames="id"
+                                  constraintName="fk_invitation_event" onDelete="CASCADE"/>
     </changeSet>
 
-    <changeSet id="14-create-invitation-log-table" author="auto">
+    <!-- 11. invitation_log_tbl -->
+    <changeSet id="11-create-invitation-log-table" author="auto">
         <createTable tableName="invitation_log_tbl">
             <column name="id" type="BIGINT" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
@@ -332,148 +238,41 @@
             <column name="sent_at" type="TIMESTAMP"/>
             <column name="sent_by" type="VARCHAR(255)"/>
             <column name="delivery_status" type="VARCHAR(50)" defaultValue="PENDING"/>
-            <column name="whatsapp_number" type="VARCHAR(20)"/>
-            <column name="error_message" type="VARCHAR(500)"/>
+            <column name="whatsapp_number" type="VARCHAR(255)"/>
+            <column name="error_message" type="VARCHAR(1000)"/>
             <column name="delivery_timestamp" type="TIMESTAMP"/>
         </createTable>
-        <addForeignKeyConstraint
-            baseTableName="invitation_log_tbl"
-            baseColumnNames="invitation_id"
-            constraintName="fk_invitation_log_invitation"
-            referencedTableName="invitation_tbl"
-            referencedColumnNames="id"
-            onDelete="CASCADE"/>
-        <addForeignKeyConstraint
-            baseTableName="invitation_log_tbl"
-            baseColumnNames="guest_id"
-            constraintName="fk_invitation_log_guest"
-            referencedTableName="guest_tbl"
-            referencedColumnNames="id"
-            onDelete="CASCADE"/>
+        <addForeignKeyConstraint baseTableName="invitation_log_tbl" baseColumnNames="invitation_id"
+                                  referencedTableName="invitation_tbl" referencedColumnNames="id"
+                                  constraintName="fk_invlog_invitation" onDelete="CASCADE"/>
+        <addForeignKeyConstraint baseTableName="invitation_log_tbl" baseColumnNames="guest_id"
+                                  referencedTableName="guest_tbl" referencedColumnNames="id"
+                                  constraintName="fk_invlog_guest" onDelete="CASCADE"/>
     </changeSet>
 
-    <changeSet id="15-update-host-table-match-user-structure" author="auto">
-        <dropColumn tableName="host_tbl" columnName="name"/>
-        <addColumn tableName="host_tbl">
-            <column name="username" type="VARCHAR(255)"/>
-            <column name="password" type="VARCHAR(255)"/>
-            <column name="provider" type="VARCHAR(255)"/>
-            <column name="role" type="VARCHAR(255)"/>
-        </addColumn>
-    </changeSet>
-
-    <changeSet id="16-update-host-initial-data-match-user" author="auto">
-        <update tableName="host_tbl">
-            <column name="username" value="host1"/>
-            <column name="password" value=""/>
-            <column name="provider" value="local"/>
-            <column name="role" value="ROLE_HOST"/>
-            <where>id = 1</where>
-        </update>
-        <update tableName="host_tbl">
-            <column name="username" value="host2"/>
-            <column name="password" value=""/>
-            <column name="provider" value="local"/>
-            <column name="role" value="ROLE_HOST"/>
-            <where>id = 2</where>
-        </update>
-    </changeSet>
-
-    <changeSet id="17-add-whatsapp-config-to-wedding-event" author="auto">
-        <addColumn tableName="wedding_event_tbl">
-            <column name="whatsapp_api_enabled" type="BOOLEAN" defaultValueBoolean="false">
-                <constraints nullable="true"/>
-            </column>
-            <column name="whatsapp_phone_number_id" type="VARCHAR(255)">
-                <constraints nullable="true"/>
-            </column>
-            <column name="whatsapp_business_account_id" type="VARCHAR(255)">
-                <constraints nullable="true"/>
-            </column>
-            <column name="whatsapp_access_token" type="VARCHAR(512)">
-                <constraints nullable="true"/>
-            </column>
-            <column name="whatsapp_api_version" type="VARCHAR(50)" defaultValue="v24.0">
-                <constraints nullable="true"/>
-            </column>
-            <column name="whatsapp_verify_token" type="VARCHAR(255)">
-                <constraints nullable="true"/>
-            </column>
-        </addColumn>
-    </changeSet>
-
-    <changeSet id="18-add-whatsapp-template-config" author="auto">
-        <addColumn tableName="wedding_event_tbl">
-            <column name="use_whatsapp_template" type="BOOLEAN" defaultValueBoolean="false">
-                <constraints nullable="true"/>
-            </column>
-            <column name="whatsapp_template_name" type="VARCHAR(255)">
-                <constraints nullable="true"/>
-            </column>
-            <column name="whatsapp_template_language" type="VARCHAR(20)" defaultValue="en_US">
-                <constraints nullable="true"/>
-            </column>
-        </addColumn>
-    </changeSet>
-
-    <changeSet id="19-add-message-template-to-invitation" author="auto">
-        <addColumn tableName="invitation_tbl">
-            <column name="message_type" type="VARCHAR(50)" defaultValue="PLAIN_TEXT">
-                <constraints nullable="false"/>
-            </column>
-            <column name="template_name" type="VARCHAR(255)">
-                <constraints nullable="true"/>
-            </column>
-            <column name="template_language" type="VARCHAR(20)" defaultValue="en_US">
-                <constraints nullable="true"/>
-            </column>
-        </addColumn>
-    </changeSet>
-
-    <changeSet id="20-remove-template-config-from-wedding-event" author="auto">
-        <dropColumn tableName="wedding_event_tbl" columnName="use_whatsapp_template"/>
-        <dropColumn tableName="wedding_event_tbl" columnName="whatsapp_template_name"/>
-        <dropColumn tableName="wedding_event_tbl" columnName="whatsapp_template_language"/>
-    </changeSet>
-
-    <changeSet id="21-make-invitation-message-nullable" author="auto">
-        <modifyDataType tableName="invitation_tbl" columnName="message" newDataType="TEXT"/>
-        <dropNotNullConstraint tableName="invitation_tbl" columnName="message" columnDataType="TEXT"/>
-    </changeSet>
-
-    <changeSet id="22-add-whatsapp-template-api-integration" author="auto">
-        <comment>Migration for WhatsApp Template API integration - templates now fetched from Meta API</comment>
-    </changeSet>
-
-    <changeSet id="23-increase-phone-number-field-lengths" author="auto">
-        <comment>Increase phone number field lengths to support international format with country codes</comment>
-        <modifyDataType tableName="attendee_tbl" columnName="mobile_number" newDataType="VARCHAR(50)"/>
-        <modifyDataType tableName="guest_tbl" columnName="contact_phone" newDataType="VARCHAR(50)"/>
-        <modifyDataType tableName="host_tbl" columnName="phone" newDataType="VARCHAR(50)"/>
-    </changeSet>
-
-    <changeSet id="24-create-guest-message-table" author="auto">
-        <comment>Create table to store WhatsApp messages exchanged between guests and hosts</comment>
+    <!-- 12. guest_message_tbl -->
+    <changeSet id="12-create-guest-message-table" author="auto">
         <createTable tableName="guest_message_tbl">
             <column name="id" type="BIGINT" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="event_id" type="BIGINT">
-                <constraints nullable="false" foreignKeyName="fk_guest_message_event" references="wedding_event_tbl(id)"/>
+                <constraints nullable="false"/>
             </column>
             <column name="guest_id" type="BIGINT">
-                <constraints foreignKeyName="fk_guest_message_guest" references="guest_tbl(id)"/>
+                <constraints nullable="false"/>
             </column>
             <column name="guest_phone_number" type="VARCHAR(50)">
                 <constraints nullable="false"/>
             </column>
             <column name="message_content" type="TEXT"/>
+            <!-- these enums are annotated with EnumType.STRING in the entity -->
             <column name="direction" type="VARCHAR(20)">
                 <constraints nullable="false"/>
             </column>
             <column name="message_type" type="VARCHAR(50)" defaultValue="TEXT"/>
             <column name="media_url" type="TEXT"/>
-            <column name="is_read" type="BOOLEAN" defaultValue="false"/>
+            <column name="is_read" type="BOOLEAN" defaultValueBoolean="false"/>
             <column name="whatsapp_message_id" type="VARCHAR(255)"/>
             <column name="status" type="VARCHAR(50)" defaultValue="PENDING"/>
             <column name="error_message" type="TEXT"/>
@@ -483,52 +282,107 @@
             <column name="updated_at" type="TIMESTAMP"/>
             <column name="read_at" type="TIMESTAMP"/>
         </createTable>
+        <addForeignKeyConstraint baseTableName="guest_message_tbl" baseColumnNames="event_id"
+                                  referencedTableName="wedding_event_tbl" referencedColumnNames="id"
+                                  constraintName="fk_guest_message_event"/>
+        <addForeignKeyConstraint baseTableName="guest_message_tbl" baseColumnNames="guest_id"
+                                  referencedTableName="guest_tbl" referencedColumnNames="id"
+                                  constraintName="fk_guest_message_guest"/>
 
         <createIndex indexName="idx_event_is_read" tableName="guest_message_tbl">
             <column name="event_id"/>
             <column name="is_read"/>
         </createIndex>
-
         <createIndex indexName="idx_guest_event" tableName="guest_message_tbl">
             <column name="guest_id"/>
             <column name="event_id"/>
         </createIndex>
-
         <createIndex indexName="idx_timestamp" tableName="guest_message_tbl">
             <column name="created_at"/>
         </createIndex>
-
-        <createIndex indexName="idx_whatsapp_message_id" tableName="guest_message_tbl">
-            <column name="whatsapp_message_id"/>
-        </createIndex>
     </changeSet>
 
-    <changeSet id="25-update-guest-phones-and-enable-whatsapp" author="auto">
-        <comment>Update all guest phone numbers to UK number and enable WhatsApp configuration for event</comment>
+    <!-- 13. Seed data (roles, users, user_roles, sample event, hosts, guests, rsvps) -->
+    <changeSet id="13-insert-initial-data" author="auto">
+        <insert tableName="role_tbl">
+            <column name="id" valueNumeric="1"/>
+            <column name="name" value="ROLE_ADMIN"/>
+        </insert>
+        <insert tableName="role_tbl">
+            <column name="id" valueNumeric="2"/>
+            <column name="name" value="ROLE_HOST"/>
+        </insert>
+        <insert tableName="role_tbl">
+            <column name="id" valueNumeric="3"/>
+            <column name="name" value="ROLE_GUEST"/>
+        </insert>
 
-        <!-- Update all guest phone numbers to UK number -->
-        <update tableName="guest_tbl">
-            <column name="contact_phone" value="+447878597720"/>
-            <where>event_id = 1</where>
-        </update>
+        <insert tableName="app_user_tbl">
+            <column name="id" valueNumeric="1"/>
+            <column name="username" value="admin"/>
+            <column name="password" value=""/>
+            <column name="email" value="admin@moments-manager.com"/>
+            <column name="provider" value="local"/>
+            <column name="role" value="ROLE_ADMIN"/>
+        </insert>
 
-        <!-- Update host phone numbers to UK number -->
-        <update tableName="host_tbl">
-            <column name="phone" value="+447878597720"/>
-            <where>event_id = 1</where>
-        </update>
+        <insert tableName="user_roles_tbl">
+            <column name="user_id" valueNumeric="1"/>
+            <column name="role_id" valueNumeric="1"/>
+        </insert>
 
-        <!-- Enable WhatsApp and configure with provided credentials -->
-        <update tableName="wedding_event_tbl">
+        <insert tableName="wedding_event_tbl">
+            <column name="id" valueNumeric="1"/>
+            <column name="name" value="Pratibha Hemnani &amp; Karthik Puravankara Wedding"/>
+            <column name="date" valueDate="2026-12-12"/>
+            <column name="status" value="Published"/>
+            <column name="bride_name" value="Pratibha"/>
+            <column name="groom_name" value="Karthik"/>
+            <column name="subdomain" value="pratibha-karthik"/>
+            <column name="expected_guest_arrival_date" valueDate="2026-12-11"/>
+            <column name="expected_guest_departure_date" valueDate="2026-12-13"/>
+            <column name="preferred_travel_airport" value="Mangluru"/>
+            <column name="preferred_travel_station" value="Kasaragod"/>
             <column name="whatsapp_api_enabled" valueBoolean="true"/>
             <column name="whatsapp_phone_number_id" value="889286674274022"/>
             <column name="whatsapp_business_account_id" value="1569365317617857"/>
-            <column name="whatsapp_access_token" value="EAAhsfeFINq4BQamaOppD8FkxRuDFKqSg9l9D11KI412ZCv68AwBe6gMH439N8r5aqZAlGRmu8Ih1zWXYzf1sZAQy7HZB5pOX98ewMvfgB4ydk5nMd5UVGUEUZCZBjWWhvV0CqXpZCaoc5xhGPYZBX6ZBxOndZAeHci22YrsM2nhXeUcNvMBpNZASrHfJkQK6ZAiGCkX8pwZDZD"/>
+            <column name="whatsapp_access_token" value="EAAhsfeFINq4BQeoW8mr3Fl1dzVcpsWUZBVkcy4c8XDNqChgaKZAV4G9YsZC4lGmxkDYZBqFtf96KB1agIFOdCBXLD97UZAmQhx6UFceLK14ujeVljCG1hSaLOn42i6sXl9oewFfPMkjVywGpBELwYnvAqOiqrMRcB6wN6RlIDddoCTfhJD4yIGAVPDHJo1GhJMgZDZD"/>
             <column name="whatsapp_api_version" value="v24.0"/>
             <column name="whatsapp_verify_token" value="moments-manager-verify-token"/>
-            <where>id = 1</where>
-        </update>
+        </insert>
+
+        <insert tableName="host_tbl">
+            <column name="id" valueNumeric="1"/>
+            <column name="username" value="host1"/>
+            <column name="password" value=""/>
+            <column name="email" value="host1@example.com"/>
+            <column name="phone" value="+447878597720"/>
+            <column name="provider" value="local"/>
+            <column name="role" value="ROLE_HOST"/>
+            <column name="event_id" valueNumeric="1"/>
+        </insert>
+
+        <insert tableName="guest_tbl">
+            <column name="id" valueNumeric="1"/>
+            <column name="family_name" value="Sharma"/>
+            <column name="contact_name" value="Ravi Sharma"/>
+            <column name="contact_email" value="ravi.sharma@example.com"/>
+            <column name="contact_phone" value="+447878597720"/>
+            <column name="side" value="Bride"/>
+            <column name="address" value="Delhi"/>
+            <column name="max_attendees" valueNumeric="5"/>
+            <column name="expected_arrival_date" valueDate="2026-12-11"/>
+            <column name="expected_departure_date" valueDate="2026-12-13"/>
+            <column name="event_id" valueNumeric="1"/>
+            <column name="expected_attendance" value="YES"/>
+        </insert>
+
+        <insert tableName="rsvp_tbl">
+            <column name="guest_id" valueNumeric="1"/>
+            <column name="event_id" valueNumeric="1"/>
+            <column name="status" value="Pending"/>
+            <column name="attendee_count" valueNumeric="0"/>
+        </insert>
     </changeSet>
 
 </databaseChangeLog>
-

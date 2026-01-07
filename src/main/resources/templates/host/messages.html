@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<th:block th:replace="~{_bootstrap_head :: head}"></th:block>
+<body class="bg-light">
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">Moments Manager</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" href="/host/dashboard">Dashboard</a></li>
+                <li class="nav-item"><a class="nav-link" href="/logout">Logout</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>WhatsApp Messages</h2>
+        <a href="/host/dashboard" class="btn btn-secondary">Back to Dashboard</a>
+    </div>
+
+    <!-- Event Selector -->
+    <div class="card mb-4" th:if="${events != null and !events.empty}">
+        <div class="card-body">
+            <form method="get" action="/host/messages" class="row g-3">
+                <div class="col-md-8">
+                    <label for="eventId" class="form-label">Select Event:</label>
+                    <select name="eventId" id="eventId" class="form-select" onchange="this.form.submit()">
+                        <option th:each="event : ${events}"
+                                th:value="${event.id}"
+                                th:text="${event.name}"
+                                th:selected="${event.id == selectedEventId}">
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <span class="badge bg-info text-dark fs-6" th:if="${unreadCount != null}">
+                        <span th:text="${unreadCount}">0</span> Unread Messages
+                    </span>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Mark All Read Button -->
+    <div class="mb-3" th:if="${messages != null and !messages.empty and unreadCount > 0}">
+        <form method="post" th:action="@{/host/messages/mark-all-read}" class="d-inline">
+            <input type="hidden" name="eventId" th:value="${selectedEventId}" />
+            <button type="submit" class="btn btn-sm btn-outline-primary">Mark All as Read</button>
+        </form>
+    </div>
+
+    <!-- Messages List -->
+    <div th:if="${messages != null and !messages.empty}">
+        <div class="card mb-3" th:each="message : ${messages}">
+            <div class="card-header d-flex justify-content-between align-items-center"
+                 th:classappend="${message.isRead ? '' : 'bg-light-blue'}">
+                <div>
+                    <strong th:text="${message.guest != null ? message.guest.contactName : message.phoneNumber}">Guest Name</strong>
+                    <span class="badge bg-secondary ms-2" th:text="${message.messageType}">TEXT</span>
+                    <span class="badge bg-success ms-1" th:if="${!message.isRead}">NEW</span>
+                </div>
+                <small class="text-muted" th:text="${#temporals.format(message.createdAt, 'MMM dd, yyyy HH:mm')}">Date</small>
+            </div>
+            <div class="card-body">
+                <p class="card-text" th:text="${message.messageContent}">Message content</p>
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted">
+                        From: <span th:text="${message.phoneNumber}">+91XXXXXXXXXX</span>
+                    </small>
+                    <div>
+                        <form method="post" th:action="@{'/host/messages/' + ${message.id} + '/mark-read'}" class="d-inline" th:if="${!message.isRead}">
+                            <input type="hidden" name="eventId" th:value="${selectedEventId}" />
+                            <button type="submit" class="btn btn-sm btn-outline-success">Mark as Read</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <nav th:if="${totalPages > 1}">
+            <ul class="pagination justify-content-center">
+                <li class="page-item" th:classappend="${currentPage == 0 ? 'disabled' : ''}">
+                    <a class="page-link" th:href="@{/host/messages(eventId=${selectedEventId}, page=${currentPage - 1})}">Previous</a>
+                </li>
+                <li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+                    th:classappend="${i == currentPage ? 'active' : ''}">
+                    <a class="page-link" th:href="@{/host/messages(eventId=${selectedEventId}, page=${i})}" th:text="${i + 1}">1</a>
+                </li>
+                <li class="page-item" th:classappend="${currentPage >= totalPages - 1 ? 'disabled' : ''}">
+                    <a class="page-link" th:href="@{/host/messages(eventId=${selectedEventId}, page=${currentPage + 1})}">Next</a>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="text-center text-muted">
+            <small>Showing <span th:text="${messages.size()}">0</span> of <span th:text="${totalMessages}">0</span> messages</small>
+        </div>
+    </div>
+
+    <!-- No Messages -->
+    <div th:if="${messages == null or messages.empty}" class="alert alert-info">
+        <i class="bi bi-info-circle"></i> No WhatsApp messages received yet for this event.
+    </div>
+
+    <!-- No Events -->
+    <div th:if="${events == null or events.empty}" class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle"></i> No events found for your account. Please contact the administrator.
+    </div>
+</div>
+
+<style>
+    .bg-light-blue {
+        background-color: #e3f2fd !important;
+    }
+</style>
+</body>
+</html>
+

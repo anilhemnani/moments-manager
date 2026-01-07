@@ -18,6 +18,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -182,9 +183,33 @@ public class AttendeeWebController {
             return "redirect:/events";
         }
 
-        // Get or create travel info
-        Optional<TravelInfo> travelInfoOpt = travelInfoRepository.findByAttendeeId(attendeeId);
-        TravelInfo travelInfo = travelInfoOpt.orElse(TravelInfo.builder().build());
+        // Get existing travel info for guest or create new
+        TravelInfo travelInfo = travelInfoRepository.findByGuestId(guestId)
+                .orElseGet(() -> TravelInfo.builder().guest(guest).build());
+        // Pre-populate defaults from event if available and fields are null
+        eventOpt.ifPresent(ev -> {
+            if (travelInfo.getGuest() == null) {
+                travelInfo.setGuest(guest);
+            }
+            if (travelInfo.getArrivalAirport() == null) {
+                travelInfo.setArrivalAirport(ev.getPreferredTravelAirport());
+            }
+            if (travelInfo.getArrivalStation() == null) {
+                travelInfo.setArrivalStation(ev.getPreferredTravelStation());
+            }
+            if (travelInfo.getDepartureAirport() == null) {
+                travelInfo.setDepartureAirport(ev.getPreferredTravelAirport());
+            }
+            if (travelInfo.getDepartureStation() == null) {
+                travelInfo.setDepartureStation(ev.getPreferredTravelStation());
+            }
+            if (travelInfo.getArrivalDateTime() == null && ev.getExpectedGuestArrivalDate() != null) {
+                travelInfo.setArrivalDateTime(ev.getExpectedGuestArrivalDate().atStartOfDay());
+            }
+            if (travelInfo.getDepartureDateTime() == null && ev.getExpectedGuestDepartureDate() != null) {
+                travelInfo.setDepartureDateTime(ev.getExpectedGuestDepartureDate().atStartOfDay());
+            }
+        });
 
         model.addAttribute("event", eventOpt.get());
         model.addAttribute("guest", guest);
@@ -197,17 +222,13 @@ public class AttendeeWebController {
     @PreAuthorize("hasAnyRole('ADMIN', 'HOST', 'GUEST')")
     @PostMapping("/{attendeeId}/travel-info")
     public String saveTravelInfo(@PathVariable Long guestId, @PathVariable Long attendeeId, @ModelAttribute TravelInfo travelInfo) {
-        Optional<TravelInfo> existingOpt = travelInfoRepository.findByAttendeeId(attendeeId);
-
-        if (existingOpt.isPresent()) {
-            // Update existing travel info
-            travelInfoService.updateTravelInfo(existingOpt.get().getId(), travelInfo);
-        } else {
-            // Create new travel info
-            travelInfoService.createTravelInfo(attendeeId, travelInfo);
-        }
-
+        // TODO: Travel Info is now at Guest level - this method should be removed or refactored
+        // Optional<TravelInfo> existingOpt = travelInfoRepository.findByAttendeeId(attendeeId);
+        // if (existingOpt.isPresent()) {
+        //     travelInfoService.updateTravelInfo(existingOpt.get().getId(), travelInfo);
+        // } else {
+        //     travelInfoService.createTravelInfo(attendeeId, travelInfo);
+        // }
         return "redirect:/guests/" + guestId + "/rsvp/attendees";
     }
 }
-

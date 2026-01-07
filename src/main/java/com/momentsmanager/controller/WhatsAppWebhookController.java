@@ -48,9 +48,9 @@ public class WhatsAppWebhookController {
      */
     @GetMapping("")
     public ResponseEntity<?> verifyWebhook(
-            @RequestParam(name = "hub.mode") String mode,
-            @RequestParam(name = "hub.challenge") String challenge,
-            @RequestParam(name = "hub.verify_token") String verifyToken) {
+            @RequestParam(name = "hub.mode", required = false) String mode,
+            @RequestParam(name = "hub.challenge", required = false) String challenge,
+            @RequestParam(name = "hub.verify_token", required = false) String verifyToken) {
 
         logger.warn("Webhook verification request received. Mode: {}", mode);
 
