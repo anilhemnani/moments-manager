@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Icon Test - WedKnots</title>
+    <link rel="icon" type="image/png" href="/wedknots_icon.png">
+</head>
+<body>
+    <h1>Icon Test Page</h1>
+
+    <h2>Test 1: Direct Image Tag</h2>
+    <img src="/wedknots_icon.png" alt="WedKnots Icon" style="width: 100px;">
+
+    <h2>Test 2: With Context Path</h2>
+    <img src="wedknots_icon.png" alt="WedKnots Icon" style="width: 100px;">
+
+    <h2>Test 3: Static Path</h2>
+    <img src="/static/wedknots_icon.png" alt="WedKnots Icon" style="width: 100px;">
+
+    <h2>Debug Info</h2>
+    <p>If you see broken images above, check:</p>
+    <ul>
+        <li>Is the application running?</li>
+        <li>Check browser console (F12) for 404 errors</li>
+        <li>Direct URL test: <a href="/wedknots_icon.png" target="_blank">/wedknots_icon.png</a></li>
+    </ul>
+
+    <h2>Expected Behavior</h2>
+    <ul>
+        <li>✓ Browser tab should show favicon</li>
+        <li>✓ Test 1 should show the icon</li>
+        <li>✗ Test 2 might fail (relative path)</li>
+        <li>✗ Test 3 might fail (static prefix not needed)</li>
+    </ul>
+</body>
+</html>
+

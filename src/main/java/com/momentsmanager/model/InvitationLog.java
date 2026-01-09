@@ -46,6 +46,13 @@ public class InvitationLog {
     @Column(name = "delivery_timestamp")
     private LocalDateTime deliveryTimestamp;
 
+    @Column(name = "invitation_method")
+    @Builder.Default
+    private String invitationMethod = "WHATSAPP"; // WHATSAPP or EXTERNAL (email, phone call, in-person, etc.)
+
+    @Column(name = "external_method_description")
+    private String externalMethodDescription; // Description of how external invitation was sent (e.g., "Email", "Phone Call", "In-person")
+
     @PrePersist
     protected void onCreate() {
         sentAt = LocalDateTime.now();

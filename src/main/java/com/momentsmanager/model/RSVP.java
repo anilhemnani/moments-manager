@@ -29,7 +29,8 @@ public class RSVP {
 
     @Column(name = "status")
     @Builder.Default
-    private String status = "Pending";
+    @Enumerated(EnumType.STRING)
+    private RSVPStatus status = RSVPStatus.PENDING;
 
     @Column(name = "attendee_count")
     private int attendeeCount;

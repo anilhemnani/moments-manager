@@ -1,6 +1,8 @@
 package com.momentsmanager.repository;
 
 import com.momentsmanager.model.WeddingEvent;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,5 +15,6 @@ public interface WeddingEventRepository extends JpaRepository<WeddingEvent, Long
     List<WeddingEvent> findByHostEmail(@Param("email") String email);
 
     Optional<WeddingEvent> findBySubdomain(String subdomain);
-}
 
+    Page<WeddingEvent> findByNameContainingIgnoreCase(String name, Pageable pageable);
+}

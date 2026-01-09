@@ -25,7 +25,7 @@
 <body class="bg-light">
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
     <div class="container-fluid">
-        <a class="navbar-brand" href="/admin/dashboard">Moments Manager</a>
+        <a class="navbar-brand" href="/admin/dashboard">WedKnots</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -58,9 +58,38 @@
     <!-- Filter Section -->
     <div class="card mb-4 shadow-sm">
         <div class="card-header bg-primary text-white">
-            <h5 class="mb-0"><i class="bi bi-funnel"></i> Filter Guests</h5>
+            <h5 class="mb-0"><i class="bi bi-funnel"></i> Filter & Send Method</h5>
         </div>
         <div class="card-body">
+            <!-- Method Selection -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label"><strong>Select Sending Method:</strong></label>
+                    <div class="btn-group w-100" role="group" id="methodGroup">
+                        <input type="radio" class="btn-check" name="method" id="methodWhatsapp" value="whatsapp" checked>
+                        <label class="btn btn-outline-primary" for="methodWhatsapp">
+                            <i class="bi bi-whatsapp"></i> WhatsApp
+                        </label>
+
+                        <input type="radio" class="btn-check" name="method" id="methodExternal" value="external">
+                        <label class="btn btn-outline-info" for="methodExternal">
+                            <i class="bi bi-person-check"></i> Mark as Sent Externally
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label for="externalMethodSelect" class="form-label"><strong>External Method:</strong></label>
+                    <select id="externalMethodSelect" name="externalMethod" class="form-select" disabled style="display: none;">
+                        <option value="">-- Select Method --</option>
+                        <option th:each="method : ${externalMethods}" th:value="${method}" th:text="${method}"></option>
+                    </select>
+                    <div id="externalMethodInfo" class="alert alert-info mt-2" style="display: none; margin-bottom: 0;">
+                        <small><i class="bi bi-info-circle"></i> Guest invitation will be marked as sent via the selected method without actually sending a message.</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Side Filter -->
             <div class="row">
                 <div class="col-md-6">
                     <label class="form-label">Filter by Side:</label>
@@ -109,7 +138,7 @@
             <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                 <h5 class="mb-0"><i class="bi bi-people"></i> Select Guests (<span id="selectedCount">0</span> selected)</h5>
                 <button type="submit" class="btn btn-success" id="sendBtn" disabled>
-                    <i class="bi bi-whatsapp"></i> Send via WhatsApp
+                    <span id="sendBtnLabel"><i class="bi bi-whatsapp"></i> Send via WhatsApp</span>
                 </button>
             </div>
             <div class="card-body">
@@ -117,12 +146,19 @@
                     <i class="bi bi-exclamation-triangle"></i> <span th:text="${errorMessage}"></span>
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
-                <div th:if="${event.whatsappApiEnabled}" class="alert alert-info mb-3">
+                <div id="whatsappAlert" class="alert alert-info mb-3">
                     <i class="bi bi-whatsapp"></i>
                     <strong th:text="${invitation.messageType == 'TEMPLATE' ? 'Using WhatsApp template: ' + invitation.templateName : 'Sending plain text via WhatsApp Cloud API'}"></strong>
                     <div class="small text-muted">
                         <span th:if="${invitation.messageType == 'TEMPLATE'}">Template language: <span th:text="${invitation.templateLanguage}"></span></span>
                         <span th:if="${invitation.messageType != 'TEMPLATE'}">Plain text will include invitation title and body.</span>
+                    </div>
+                </div>
+                <div id="externalAlert" class="alert alert-info mb-3" style="display: none;">
+                    <i class="bi bi-person-check"></i>
+                    <strong>Mark as Sent Externally:</strong>
+                    <div class="small text-muted">
+                        Selected guests will be marked as having received the invitation via your selected method (Email, Phone Call, SMS, etc.) without actually sending any message through this system.
                     </div>
                 </div>
                 <div th:if="${!sentGuestIds.isEmpty()}" class="alert alert-warning mb-3">
@@ -295,14 +331,59 @@
         updateSelectedCount();
     }
 
+    function updateMethodUI() {
+        const methodRadios = document.querySelectorAll('input[name="method"]');
+        const selectedMethod = Array.from(methodRadios).find(r => r.checked).value;
+        const externalMethodSelect = document.getElementById('externalMethodSelect');
+        const externalMethodInfo = document.getElementById('externalMethodInfo');
+        const whatsappAlert = document.getElementById('whatsappAlert');
+        const externalAlert = document.getElementById('externalAlert');
+        const sendBtnLabel = document.getElementById('sendBtnLabel');
+
+        if (selectedMethod === 'external') {
+            externalMethodSelect.disabled = false;
+            externalMethodSelect.style.display = 'block';
+            externalMethodInfo.style.display = 'block';
+            whatsappAlert.style.display = 'none';
+            externalAlert.style.display = 'block';
+            sendBtnLabel.innerHTML = '<i class="bi bi-person-check"></i> Mark as Sent Externally';
+        } else {
+            externalMethodSelect.disabled = true;
+            externalMethodSelect.style.display = 'none';
+            externalMethodInfo.style.display = 'none';
+            whatsappAlert.style.display = 'block';
+            externalAlert.style.display = 'none';
+            sendBtnLabel.innerHTML = '<i class="bi bi-whatsapp"></i> Send via WhatsApp';
+        }
+    }
+
     // Initialize count on page load
     document.addEventListener('DOMContentLoaded', function() {
         updateSelectedCount();
+        updateMethodUI();
+
+        // Listen to method changes
+        document.querySelectorAll('input[name="method"]').forEach(radio => {
+            radio.addEventListener('change', updateMethodUI);
+        });
 
         // Confirm before sending
         document.getElementById('sendForm').addEventListener('submit', function(e) {
             const selectedCheckboxes = document.querySelectorAll('.guest-checkbox:checked');
             const count = selectedCheckboxes.length;
+
+            const methodRadios = document.querySelectorAll('input[name="method"]');
+            const selectedMethod = Array.from(methodRadios).find(r => r.checked).value;
+
+            // Validate external method selection
+            if (selectedMethod === 'external') {
+                const externalMethodSelect = document.getElementById('externalMethodSelect');
+                if (!externalMethodSelect.value || externalMethodSelect.value.trim() === '') {
+                    alert('Please select an external invitation method');
+                    e.preventDefault();
+                    return false;
+                }
+            }
 
             // Count how many are resends
             let resendCount = 0;
@@ -317,14 +398,18 @@
             });
 
             let confirmMessage = '';
+            const methodLabel = selectedMethod === 'external'
+                ? document.getElementById('externalMethodSelect').value
+                : 'WhatsApp';
+
             if (resendCount > 0 && newSendCount > 0) {
-                confirmMessage = `Are you sure you want to send this invitation to ${count} guest(s)?\n\n` +
+                confirmMessage = `Are you sure you want to send this invitation to ${count} guest(s) via ${methodLabel}?\n\n` +
                                 `• ${newSendCount} new send(s)\n` +
                                 `• ${resendCount} resend(s) (already sent before)`;
             } else if (resendCount > 0) {
-                confirmMessage = `Are you sure you want to RESEND this invitation to ${resendCount} guest(s) who have already received it?`;
+                confirmMessage = `Are you sure you want to RESEND this invitation to ${resendCount} guest(s) via ${methodLabel} who have already received it?`;
             } else {
-                confirmMessage = `Are you sure you want to send this invitation to ${newSendCount} guest(s) via WhatsApp?`;
+                confirmMessage = `Are you sure you want to send this invitation to ${newSendCount} guest(s) via ${methodLabel}?`;
             }
 
             if (!confirm(confirmMessage)) {

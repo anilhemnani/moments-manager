@@ -1,11 +1,6 @@
 package com.momentsmanager.web;
 
-import com.momentsmanager.model.Attendee;
-import com.momentsmanager.model.Invitation;
-import com.momentsmanager.model.Guest;
-import com.momentsmanager.model.RSVP;
-import com.momentsmanager.model.TravelInfo;
-import com.momentsmanager.model.WeddingEvent;
+import com.momentsmanager.model.*;
 import com.momentsmanager.repository.InvitationLogRepository;
 import com.momentsmanager.repository.GuestRepository;
 import com.momentsmanager.repository.RSVPRepository;
@@ -22,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -126,7 +122,7 @@ public class GuestInvitationsController {
     }
 
     /**
-     * Guest RSVP form
+     * Guest RSVP form - now separate from attendees
      */
     @PreAuthorize("hasRole('GUEST')")
     @GetMapping("/rsvp/form")
@@ -145,16 +141,150 @@ public class GuestInvitationsController {
         RSVP rsvp = rsvpOpt.orElseGet(() -> RSVP.builder()
                 .guest(guest)
                 .eventId(eventId)
-                .status("Pending")
-                .attendeeCount(0)
+                .status(RSVPStatus.PENDING)
+                .attendeeCount(1)
                 .build());
         
         model.addAttribute("guest", guest);
         model.addAttribute("event", event);
         model.addAttribute("rsvp", rsvp);
         model.addAttribute("eventId", eventId);
-        model.addAttribute("statusOptions", new String[]{"Pending", "Accepted", "Declined", "Maybe"});
-        return "guest_rsvp_form";
+
+        return "guest_rsvp_attendees_form_new";
+    }
+
+    /**
+     * Save RSVP status and attendee count only
+     */
+    @PreAuthorize("hasRole('GUEST')")
+    @PostMapping("/rsvp/save")
+    public String saveRSVP(
+            @RequestParam Long guestId,
+            @RequestParam Long eventId,
+            @RequestParam RSVPStatus status,
+            @RequestParam(required = false) Integer attendeeCount,
+            RedirectAttributes redirectAttributes) {
+
+        try {
+            Guest guest = guestRepository.findById(guestId)
+                    .orElseThrow(() -> new RuntimeException("Guest not found"));
+
+            // Verify the guest belongs to the authenticated user
+            verifyGuestAccess(guest);
+
+            WeddingEvent event = weddingEventRepository.findById(eventId)
+                    .orElseThrow(() -> new RuntimeException("Event not found"));
+
+            // Create or update RSVP
+            Optional<RSVP> rsvpOpt = rsvpRepository.findByGuestId(guest.getId());
+            RSVP rsvp = rsvpOpt.orElseGet(() -> RSVP.builder()
+                    .guest(guest)
+                    .eventId(eventId)
+                    .build());
+
+            rsvp.setStatus(status);
+
+            // If ACCEPTED, attendee count is required
+            if (status == RSVPStatus.ACCEPTED) {
+                if (attendeeCount == null || attendeeCount < 1) {
+                    throw new RuntimeException("Number of attendees is required when accepting the invitation");
+                }
+                if (attendeeCount > guest.getMaxAttendees()) {
+                    throw new RuntimeException("Number of attendees cannot exceed " + guest.getMaxAttendees());
+                }
+                rsvp.setAttendeeCount(attendeeCount);
+            } else {
+                // For other statuses, set to 0 or 1
+                rsvp.setAttendeeCount(attendeeCount != null ? attendeeCount : 0);
+            }
+
+            rsvpRepository.save(rsvp);
+
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "RSVP saved successfully! You can now update your travel details and attendee information.");
+            return "redirect:/invitations";
+
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Error saving RSVP: " + e.getMessage());
+            return "redirect:/invitations/rsvp/form?guestId=" + guestId + "&eventId=" + eventId;
+        }
+    }
+
+    /**
+     * Merged RSVP and Attendees form endpoint (DEPRECATED - kept for compatibility)
+     */
+    @PreAuthorize("hasRole('GUEST')")
+    @PostMapping("/rsvp-attendees/save")
+    public String saveRSVPAndAttendees(
+            @RequestParam Long guestId,
+            @RequestParam Long eventId,
+            @RequestParam RSVPStatus status,
+            @RequestParam int attendeeCount,
+            @RequestParam(required = false) List<String> attendeeNames,
+            @RequestParam(required = false) List<String> attendeeAges,
+            RedirectAttributes redirectAttributes) {
+
+        try {
+            Guest guest = guestRepository.findById(guestId)
+                    .orElseThrow(() -> new RuntimeException("Guest not found"));
+
+            // Verify the guest belongs to the authenticated user
+            verifyGuestAccess(guest);
+
+            WeddingEvent event = weddingEventRepository.findById(eventId)
+                    .orElseThrow(() -> new RuntimeException("Event not found"));
+
+            // Validate attendee count
+            if (attendeeCount < 1 || attendeeCount > guest.getMaxAttendees()) {
+                throw new RuntimeException("Invalid attendee count. Maximum allowed: " + guest.getMaxAttendees());
+            }
+
+            // Get or create RSVP
+            Optional<RSVP> rsvpOpt = rsvpRepository.findByGuestId(guest.getId());
+            RSVP rsvp = rsvpOpt.orElseGet(() -> RSVP.builder()
+                    .guest(guest)
+                    .eventId(eventId)
+                    .build());
+
+            // Update RSVP
+            rsvp.setStatus(status);
+            rsvp.setAttendeeCount(attendeeCount);
+            rsvp = rsvpRepository.save(rsvp);
+
+            // Clear existing attendees
+            if (rsvp.getAttendees() != null) {
+                attendeeRepository.deleteAll(rsvp.getAttendees());
+            }
+
+            // Create new attendees from form data
+            if (attendeeNames != null && !attendeeNames.isEmpty()) {
+                for (int i = 0; i < attendeeNames.size() && i < attendeeCount; i++) {
+                    String name = attendeeNames.get(i);
+                    String ageGroup = (attendeeAges != null && i < attendeeAges.size())
+                            ? attendeeAges.get(i)
+                            : "Adult";
+
+                    if (name != null && !name.trim().isEmpty()) {
+                        Attendee attendee = Attendee.builder()
+                                .rsvp(rsvp)
+                                .name(name.trim())
+                                .ageGroup(ageGroup)
+                                .build();
+                        attendeeRepository.save(attendee);
+                    }
+                }
+            }
+
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "RSVP and attendees saved successfully!");
+            return "redirect:/invitations";
+
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Failed to save RSVP and attendees: " + e.getMessage());
+            return "redirect:/invitations/rsvp/form?guestId=" + guestId + "&eventId=" + eventId;
+        }
     }
 
     /**
@@ -163,7 +293,7 @@ public class GuestInvitationsController {
     @PreAuthorize("hasRole('GUEST')")
     @PostMapping("/rsvp/update")
     public String updateRSVP(
-            @RequestParam String status,
+            @RequestParam RSVPStatus status,
             @RequestParam int attendeeCount,
             RedirectAttributes redirectAttributes) {
         
@@ -305,9 +435,25 @@ public class GuestInvitationsController {
             travelInfo.setDepartureDateTime(event.getExpectedGuestDepartureDate().atStartOfDay());
         }
 
+        // Get RSVP information
+        Optional<RSVP> rsvpOpt = rsvpRepository.findByGuestId(guest.getId());
+        RSVP rsvp = rsvpOpt.orElseGet(() -> RSVP.builder()
+                .guest(guest)
+                .eventId(eventId)
+                .attendeeCount(1)
+                .build());
+
+        // Get existing attendees
+        List<Attendee> attendees = new ArrayList<>();
+        if (rsvp.getAttendees() != null) {
+            attendees = new ArrayList<>(rsvp.getAttendees());
+        }
+
         model.addAttribute("guest", guest);
         model.addAttribute("event", event);
         model.addAttribute("travelInfo", travelInfo);
+        model.addAttribute("rsvp", rsvp);
+        model.addAttribute("attendees", attendees);
         model.addAttribute("eventId", eventId);
         return "guest_travel_info_form";
     }
@@ -321,42 +467,81 @@ public class GuestInvitationsController {
             @RequestParam Long guestId,
             @RequestParam Long eventId,
             @ModelAttribute TravelInfo travelInfo,
+            @RequestParam(required = false) List<String> attendeeNames,
+            @RequestParam(required = false) List<String> attendeeAges,
             RedirectAttributes redirectAttributes) {
 
-        Guest guest = guestRepository.findById(guestId)
-                .orElseThrow(() -> new RuntimeException("Guest not found"));
+        try {
+            Guest guest = guestRepository.findById(guestId)
+                    .orElseThrow(() -> new RuntimeException("Guest not found"));
 
-        // Verify the guest belongs to the authenticated user
-        verifyGuestAccess(guest);
+            // Verify the guest belongs to the authenticated user
+            verifyGuestAccess(guest);
 
-        travelInfo.setGuest(guest);
-        // Ensure defaults if still missing
-        WeddingEvent event = weddingEventRepository.findById(eventId)
-                .orElseThrow(() -> new RuntimeException("Event not found"));
-        if (travelInfo.getArrivalAirport() == null) {
-            travelInfo.setArrivalAirport(event.getPreferredTravelAirport());
-        }
-        if (travelInfo.getArrivalStation() == null) {
-            travelInfo.setArrivalStation(event.getPreferredTravelStation());
-        }
-        if (travelInfo.getDepartureAirport() == null) {
-            travelInfo.setDepartureAirport(event.getPreferredTravelAirport());
-        }
-        if (travelInfo.getDepartureStation() == null) {
-            travelInfo.setDepartureStation(event.getPreferredTravelStation());
-        }
-        if (travelInfo.getArrivalDateTime() == null && event.getExpectedGuestArrivalDate() != null) {
-            travelInfo.setArrivalDateTime(event.getExpectedGuestArrivalDate().atStartOfDay());
-        }
-        if (travelInfo.getDepartureDateTime() == null && event.getExpectedGuestDepartureDate() != null) {
-            travelInfo.setDepartureDateTime(event.getExpectedGuestDepartureDate().atStartOfDay());
-        }
+            WeddingEvent event = weddingEventRepository.findById(eventId)
+                    .orElseThrow(() -> new RuntimeException("Event not found"));
 
-        travelInfoRepository.save(travelInfo);
+            // Save travel information
+            travelInfo.setGuest(guest);
+            if (travelInfo.getArrivalAirport() == null) {
+                travelInfo.setArrivalAirport(event.getPreferredTravelAirport());
+            }
+            if (travelInfo.getArrivalStation() == null) {
+                travelInfo.setArrivalStation(event.getPreferredTravelStation());
+            }
+            if (travelInfo.getDepartureAirport() == null) {
+                travelInfo.setDepartureAirport(event.getPreferredTravelAirport());
+            }
+            if (travelInfo.getDepartureStation() == null) {
+                travelInfo.setDepartureStation(event.getPreferredTravelStation());
+            }
+            if (travelInfo.getArrivalDateTime() == null && event.getExpectedGuestArrivalDate() != null) {
+                travelInfo.setArrivalDateTime(event.getExpectedGuestArrivalDate().atStartOfDay());
+            }
+            if (travelInfo.getDepartureDateTime() == null && event.getExpectedGuestDepartureDate() != null) {
+                travelInfo.setDepartureDateTime(event.getExpectedGuestDepartureDate().atStartOfDay());
+            }
+            travelInfoRepository.save(travelInfo);
 
-        redirectAttributes.addFlashAttribute("successMessage",
-                "Travel information updated successfully");
-        return "redirect:/invitations";
+            // Save attendees if provided
+            if (attendeeNames != null && !attendeeNames.isEmpty()) {
+                // Get RSVP to associate attendees
+                Optional<RSVP> rsvpOpt = rsvpRepository.findByGuestId(guest.getId());
+                if (rsvpOpt.isPresent()) {
+                    RSVP rsvp = rsvpOpt.get();
+
+                    // Delete existing attendees
+                    if (rsvp.getAttendees() != null) {
+                        attendeeRepository.deleteAll(rsvp.getAttendees());
+                    }
+
+                    // Create new attendees
+                    for (int i = 0; i < attendeeNames.size(); i++) {
+                        String name = attendeeNames.get(i);
+                        String ageGroup = (attendeeAges != null && i < attendeeAges.size())
+                                ? attendeeAges.get(i)
+                                : "Adult";
+
+                        if (name != null && !name.trim().isEmpty()) {
+                            Attendee attendee = Attendee.builder()
+                                    .rsvp(rsvp)
+                                    .name(name.trim())
+                                    .ageGroup(ageGroup)
+                                    .build();
+                            attendeeRepository.save(attendee);
+                        }
+                    }
+                }
+            }
+
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Travel information and attendee details saved successfully");
+            return "redirect:/invitations";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Error saving travel information: " + e.getMessage());
+            return "redirect:/invitations/travel-info?guestId=" + guestId + "&eventId=" + eventId;
+        }
     }
 
     /**

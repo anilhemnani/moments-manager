@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>RSVP</title>
+    <meta charset="UTF-8">
+    <th:block th:replace="~{_bootstrap_head :: head}"></th:block>
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">WedKnots</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" href="/invitations">My Invitations</a></li>
+                <li class="nav-item"><a class="nav-link" href="/logout">Logout</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0"><i class="bi bi-calendar-check"></i> RSVP</h3>
+                </div>
+                <div class="card-body p-5">
+                    <p class="text-muted mb-4">Please confirm your attendance for the wedding.</p>
+
+                    <form action="/invitations/rsvp/save" method="post" id="rsvpForm">
+                        <!-- Hidden fields -->
+                        <input type="hidden" name="guestId" th:value="${guest.id}"/>
+                        <input type="hidden" name="eventId" th:value="${eventId}"/>
+
+                        <!-- Guest Info Section -->
+                        <div class="card mb-4 bg-light">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-person"></i> Your Information</h5>
+                            </div>
+                            <div class="card-body">
+                                <dl class="row mb-0">
+                                    <dt class="col-sm-4">Name:</dt>
+                                    <dd class="col-sm-8" th:text="${guest.contactName}">Guest Name</dd>
+
+                                    <dt class="col-sm-4">Family:</dt>
+                                    <dd class="col-sm-8" th:text="${guest.familyName}">Family Name</dd>
+
+                                    <dt class="col-sm-4">Phone:</dt>
+                                    <dd class="col-sm-8" th:text="${guest.contactPhone}">Phone Number</dd>
+                                </dl>
+                            </div>
+                        </div>
+
+                        <!-- Event Info -->
+                        <div class="alert alert-info mb-4" role="alert">
+                            <h6 class="alert-heading"><i class="bi bi-calendar-event"></i> Event Details</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-2">
+                                        <strong><i class="bi bi-calendar"></i> Wedding Date</strong><br>
+                                        <span th:text="${event.date}">Wedding Date</span>
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-2">
+                                        <strong><i class="bi bi-geo-alt"></i> Location</strong><br>
+                                        <span th:text="${event.place ?: 'TBD'}">Location</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- RSVP Status Section -->
+                        <div class="card mb-4 bg-light">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-question-circle"></i> Your RSVP Status</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="status" class="form-label"><strong>Will you attend? *</strong></label>
+                                    <select name="status" id="status" class="form-select" required onchange="toggleAttendeeCount()">
+                                        <option value="">-- Select Your Response --</option>
+                                        <option value="ACCEPTED" th:selected="${rsvp.status != null and rsvp.status.name() == 'ACCEPTED'}">
+                                            ✓ Yes, I will attend
+                                        </option>
+                                        <option value="DECLINED" th:selected="${rsvp.status != null and rsvp.status.name() == 'DECLINED'}">
+                                            ✗ No, I cannot attend
+                                        </option>
+                                        <option value="MAYBE" th:selected="${rsvp.status != null and rsvp.status.name() == 'MAYBE'}">
+                                            ? Not sure yet
+                                        </option>
+                                        <option value="PENDING" th:selected="${rsvp.status == null or rsvp.status.name() == 'PENDING'}">
+                                            Pending (Not decided yet)
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Attendees Count Section (Only for ACCEPTED) -->
+                        <div class="card mb-4 bg-light" id="attendeeCountSection" style="display: none;">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-people-fill"></i> Number of Attendees</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="attendeeCount" class="form-label"><strong>How many people will attend? *</strong></label>
+                                    <div class="input-group mb-2">
+                                        <button type="button" class="btn btn-outline-secondary" onclick="decrementAttendeeCount()">−</button>
+                                        <input type="number"
+                                               name="attendeeCount"
+                                               id="attendeeCount"
+                                               class="form-control text-center"
+                                               th:value="${rsvp.attendeeCount ?: 0}"
+                                               min="1"
+                                               th:max="${guest.maxAttendees}">
+                                        <button type="button" class="btn btn-outline-secondary" onclick="incrementAttendeeCount()">+</button>
+                                    </div>
+                                    <small class="form-text text-muted d-block mb-2">
+                                        Maximum Attendees: <strong th:text="${guest.maxAttendees}">5</strong> attendee(s)
+                                    </small>
+                                    <div class="alert alert-warning" id="maxWarning" style="display: none; margin-top: 0.5rem; font-size: 0.875rem;">
+                                        <i class="bi bi-exclamation-triangle"></i> You've reached the maximum number of attendees allowed.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Info Alert -->
+                        <div class="alert alert-info" role="alert">
+                            <h5 class="alert-heading"><i class="bi bi-info-circle"></i> Next Steps</h5>
+                            <p class="mb-0">After confirming your RSVP, you'll be able to:</p>
+                            <ol class="mb-0 mt-2">
+                                <li>Enter attendee details (names and ages)</li>
+                                <li>Share your travel information (flight/train details)</li>
+                            </ol>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-check-circle"></i> Save RSVP
+                            </button>
+                            <a href="/invitations" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const maxAttendees = [[${guest.maxAttendees}]];
+
+    function toggleAttendeeCount() {
+        const status = document.getElementById('status').value;
+        const attendeeCountSection = document.getElementById('attendeeCountSection');
+        const attendeeCountInput = document.getElementById('attendeeCount');
+
+        if (status === 'ACCEPTED') {
+            attendeeCountSection.style.display = 'block';
+            attendeeCountInput.required = true;
+        } else {
+            attendeeCountSection.style.display = 'none';
+            attendeeCountInput.required = false;
+            attendeeCountInput.value = 1;
+        }
+    }
+
+    function updateAttendeeCount() {
+        const count = parseInt(document.getElementById('attendeeCount').value) || 1;
+        const maxWarning = document.getElementById('maxWarning');
+
+        if (count >= maxAttendees) {
+            maxWarning.style.display = 'block';
+        } else {
+            maxWarning.style.display = 'none';
+        }
+
+        if (count < 1) {
+            document.getElementById('attendeeCount').value = 1;
+        } else if (count > maxAttendees) {
+            document.getElementById('attendeeCount').value = maxAttendees;
+        }
+    }
+
+    function incrementAttendeeCount() {
+        const input = document.getElementById('attendeeCount');
+        const count = parseInt(input.value) || 1;
+        if (count < maxAttendees) {
+            input.value = count + 1;
+            updateAttendeeCount();
+        }
+    }
+
+    function decrementAttendeeCount() {
+        const input = document.getElementById('attendeeCount');
+        const count = parseInt(input.value) || 1;
+        if (count > 1) {
+            input.value = count - 1;
+            updateAttendeeCount();
+        }
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        toggleAttendeeCount();
+        updateAttendeeCount();
+    });
+
+    // Form validation
+    document.getElementById('rsvpForm').addEventListener('submit', function(e) {
+        const status = document.getElementById('status').value;
+        const attendeeCount = document.getElementById('attendeeCount');
+
+        if (status === 'ACCEPTED') {
+            const count = parseInt(attendeeCount.value) || 0;
+            if (count < 1) {
+                alert('Please specify the number of attendees');
+                e.preventDefault();
+                return false;
+            }
+        }
+    });
+</script>
+</body>
+</html>
+

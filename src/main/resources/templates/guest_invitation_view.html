@@ -8,7 +8,7 @@
 <body class="bg-light">
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
     <div class="container-fluid">
-        <a class="navbar-brand" href="/">Moments Manager</a>
+        <a class="navbar-brand" href="/">WedKnots</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -100,13 +100,13 @@
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <p class="text-muted">Current Status:</p>
-                                    <span th:if="${rsvp.status == 'Accepted'}" class="badge bg-success fs-6" th:text="${rsvp.status}"></span>
-                                    <span th:if="${rsvp.status == 'Pending'}" class="badge bg-warning fs-6" th:text="${rsvp.status}"></span>
-                                    <span th:if="${rsvp.status == 'Declined'}" class="badge bg-danger fs-6" th:text="${rsvp.status}"></span>
-                                    <span th:if="${rsvp.status == 'Maybe'}" class="badge bg-info fs-6" th:text="${rsvp.status}"></span>
+                                    <span th:if="${rsvp != null and rsvp.status != null and rsvp.status.name() == 'ACCEPTED'}" class="badge bg-success fs-6" th:text="${rsvp.status}"></span>
+                                    <span th:if="${rsvp != null and rsvp.status != null and rsvp.status.name() == 'DECLINED'}" class="badge bg-danger fs-6" th:text="${rsvp.status}"></span>
+                                    <span th:if="${rsvp != null and rsvp.status != null and rsvp.status.name() == 'MAYBE'}" class="badge bg-info fs-6" th:text="${rsvp.status}"></span>
+                                    <span th:if="${rsvp == null or rsvp.status == null or rsvp.status.name() == 'PENDING'}" class="badge bg-warning fs-6">PENDING</span>
                                 </div>
                                 <div class="col-md-6">
-                                    <p class="text-muted">Attendees: <span th:text="${rsvp.attendeeCount}">0</span> / <span th:text="${guest.maxAttendees}">5</span></p>
+                                    <p class="text-muted">Attendees: <span th:text="${rsvp != null && rsvp.attendeeCount != null ? rsvp.attendeeCount : 0}">0</span> / <span th:text="${guest.maxAttendees}">5</span></p>
                                 </div>
                             </div>
                             <div class="d-grid gap-2">
@@ -120,28 +120,13 @@
                     <!-- Attendees Section -->
                     <div class="card mb-5">
                         <div class="card-header bg-info text-white">
-                            <h5 class="mb-0"><i class="bi bi-people-fill"></i> Attendees</h5>
+                            <h5 class="mb-0"><i class="bi bi-airplane"></i> Travel Information & Attendees</h5>
                         </div>
                         <div class="card-body">
-                            <p class="text-muted mb-3">Manage who from your family will attend the wedding.</p>
+                            <p class="text-muted mb-3">Share your travel details and provide names/ages of attendees who will be joining you.</p>
                             <div class="d-grid gap-2">
-                                <a th:href="@{/invitations/attendees(guestId=${guest.id},eventId=${event.id})}" class="btn btn-info">
-                                    <i class="bi bi-person-plus"></i> Add/Manage Attendees
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Travel Information Section -->
-                    <div class="card mb-5">
-                        <div class="card-header bg-warning text-dark">
-                            <h5 class="mb-0"><i class="bi bi-airplane"></i> Travel Information</h5>
-                        </div>
-                        <div class="card-body">
-                            <p class="text-muted mb-3">Share your travel details (flight/train info, arrival/departure times, etc.)</p>
-                            <div class="d-grid gap-2">
-                                <a th:href="@{/invitations/travel-info(guestId=${guest.id},eventId=${event.id})}" class="btn btn-warning">
-                                    <i class="bi bi-pencil-square"></i> Update Travel Details
+                                <a th:href="@{/invitations/travel-info(guestId=${guest.id},eventId=${event.id})}" class="btn btn-info">
+                                    <i class="bi bi-airplane"></i> Update Travel Details & Attendees
                                 </a>
                             </div>
                         </div>
@@ -151,9 +136,9 @@
                     <div class="alert alert-success" role="alert">
                         <h5 class="alert-heading"><i class="bi bi-check-circle"></i> Next Steps</h5>
                         <ol class="mb-0">
-                            <li>Update your RSVP status (Accepted, Declined, Maybe)</li>
-                            <li>Add attendees from your family/group</li>
-                            <li>Share your travel details (flight, train, arrival time)</li>
+                            <li>Update your RSVP status and confirm number of attendees</li>
+                            <li>Provide attendee details and travel information on a single form</li>
+                            <li>We'll use this information to coordinate pickups and arrangements</li>
                         </ol>
                     </div>
                 </div>

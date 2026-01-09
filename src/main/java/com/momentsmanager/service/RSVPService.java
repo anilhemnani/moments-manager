@@ -1,6 +1,7 @@
 package com.momentsmanager.service;
 
 import com.momentsmanager.model.RSVP;
+import com.momentsmanager.model.RSVPStatus;
 import com.momentsmanager.repository.RSVPRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -30,14 +31,14 @@ public class RSVPService {
     @Transactional
     public RSVP createRSVP(RSVP rsvp) {
         // Set default status if not provided
-        if (rsvp.getStatus() == null || rsvp.getStatus().isEmpty()) {
-            rsvp.setStatus("Pending");
+        if (rsvp.getStatus() == null) {
+            rsvp.setStatus(RSVPStatus.PENDING);
         }
         return rsvpRepository.save(rsvp);
     }
 
     @Transactional
-    public RSVP updateRSVPStatus(Long rsvpId, String status, int attendeeCount) {
+    public RSVP updateRSVPStatus(Long rsvpId, RSVPStatus status, int attendeeCount) {
         Optional<RSVP> rsvpOpt = rsvpRepository.findById(rsvpId);
         if (rsvpOpt.isPresent()) {
             RSVP rsvp = rsvpOpt.get();
@@ -50,12 +51,12 @@ public class RSVPService {
 
     @Transactional
     public RSVP acceptRSVP(Long rsvpId, int attendeeCount) {
-        return updateRSVPStatus(rsvpId, "Accepted", attendeeCount);
+        return updateRSVPStatus(rsvpId, RSVPStatus.ACCEPTED, attendeeCount);
     }
 
     @Transactional
     public RSVP declineRSVP(Long rsvpId) {
-        return updateRSVPStatus(rsvpId, "Declined", 0);
+        return updateRSVPStatus(rsvpId, RSVPStatus.DECLINED, 0);
     }
 
     @Transactional

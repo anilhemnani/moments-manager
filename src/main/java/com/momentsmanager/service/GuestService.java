@@ -2,6 +2,7 @@ package com.momentsmanager.service;
 
 import com.momentsmanager.model.Guest;
 import com.momentsmanager.model.RSVP;
+import com.momentsmanager.model.RSVPStatus;
 import com.momentsmanager.repository.GuestRepository;
 import com.momentsmanager.repository.RSVPRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +30,7 @@ public class GuestService {
         RSVP rsvp = RSVP.builder()
                 .guest(savedGuest)
                 .eventId(savedGuest.getEventId())
-                .status("Pending")
+                .status(RSVPStatus.PENDING)
                 .attendeeCount(0)
                 .build();
 
@@ -80,7 +81,7 @@ public class GuestService {
     }
 
     @Transactional
-    public RSVP updateGuestRSVP(Long guestId, String status, int attendeeCount) {
+    public RSVP updateGuestRSVP(Long guestId, RSVPStatus status, int attendeeCount) {
         Optional<RSVP> rsvpOpt = rsvpRepository.findByGuestId(guestId);
         if (rsvpOpt.isPresent()) {
             RSVP rsvp = rsvpOpt.get();

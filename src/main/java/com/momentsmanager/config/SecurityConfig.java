@@ -10,6 +10,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -31,7 +32,7 @@ public class SecurityConfig {
                 redirectUrl = "/login/admin";
             } else if (requestUri.startsWith("/host")) {
                 redirectUrl = "/login/host";
-            } else if (requestUri.startsWith("/guest")) {
+            } else if (requestUri.startsWith("/guest") || requestUri.startsWith("/invitations")) {
                 redirectUrl = "/login/guest";
             } else {
                 // If no specific role path, check for previous role cookie
@@ -64,7 +65,7 @@ public class SecurityConfig {
             public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
                 // Determine user role and set cookie
                 String userRole = "GUEST";
-                String redirectUrl = "/guest/dashboard";
+                String redirectUrl = "/invitations";
 
                 if (authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"))) {
                     userRole = "ADMIN";
@@ -104,19 +105,24 @@ public class SecurityConfig {
         };
     }
 
+    @Autowired
+    private AccessDeniedHandler accessDeniedLoggingHandler;
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/login/**", "/register", "/css/**", "/js/**", "/set-password", "/set-password-host", "/public/**", "/api/whatsapp/webhook/**").permitAll()
+                .requestMatchers("/", "/login/**", "/register", "/css/**", "/js/**", "/set-password", "/set-password-host", "/public/**", "/api/whatsapp/webhook/**", "/privacy-policy", "/contact/**", "/icon-test", "/icon", "/icon-debug").permitAll()
                 .requestMatchers("/h2-console/**").hasRole("ADMIN")  // Protect H2 console - admin only
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/host/**").hasRole("HOST")
                 .requestMatchers("/guest/**").hasRole("GUEST")
+                .requestMatchers("/invitations/**").hasRole("GUEST")  // Guest invitations require GUEST role
                 .anyRequest().authenticated()
             )
             .exceptionHandling(exceptions -> exceptions
                 .authenticationEntryPoint(customAuthenticationEntryPoint())
+                .accessDeniedHandler(accessDeniedLoggingHandler)
             )
             .sessionManagement(session -> session
                 .sessionCreationPolicy(org.springframework.security.config.http.SessionCreationPolicy.IF_REQUIRED)

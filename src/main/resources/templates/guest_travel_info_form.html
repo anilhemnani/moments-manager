@@ -4,11 +4,20 @@
     <title>Travel Information</title>
     <meta charset="UTF-8">
     <th:block th:replace="~{_bootstrap_head :: head}"></th:block>
+    <style>
+        .attendee-field-group {
+            background-color: #f8f9fa;
+            border-left: 4px solid #0d6efd;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 0.25rem;
+        }
+    </style>
 </head>
 <body class="bg-light">
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
     <div class="container-fluid">
-        <a class="navbar-brand" href="/">Moments Manager</a>
+        <a class="navbar-brand" href="/">WedKnots</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -29,13 +38,18 @@
                     <h3 class="mb-0"><i class="bi bi-airplane"></i> Travel Information</h3>
                 </div>
                 <div class="card-body p-5">
-                    <p class="text-muted mb-4">Share your travel details to help us coordinate pickups and accommodations
+                    <p class="text-muted mb-4">Share your travel details to help us coordinate pickups and
+                        accommodations
                     </p>
 
                     <form action="/invitations/travel-info/save" method="post" th:object="${travelInfo}">
                         <!-- Hidden fields -->
                         <input type="hidden" name="guestId" th:value="${guest.id}"/>
                         <input type="hidden" name="eventId" th:value="${eventId}"/>
+
+                        <!-- Hidden attendee fields (will be populated by JavaScript) -->
+                        <div id="attendeeNameFields"></div>
+                        <div id="attendeeAgeFields"></div>
 
                         <!-- Arrival Information -->
                         <div class="card mb-4 bg-light">
@@ -61,7 +75,8 @@
 
                                 <div class="row" id="arrivalFlightFields" style="display:none;">
                                     <div class="col-md-6 mb-3">
-                                        <label for="arrivalFlightNumber" class="form-label">Flight Number (if applicable)
+                                        <label for="arrivalFlightNumber" class="form-label">Flight Number (if
+                                            applicable)
                                         </label>
                                         <input type="text" th:field="*{arrivalFlightNumber}" class="form-control"
                                                placeholder="e.g., AI 123">
@@ -69,21 +84,20 @@
                                     <div class="col-md-6 mb-3">
                                         <label for="arrivalAirport" class="form-label">Airport</label>
                                         <input type="text" th:field="*{arrivalAirport}" class="form-control"
-                                               placeholder="e.g., Indira Gandhi Airport"
-                                               th:value="${travelInfo.arrivalAirport ?: event.preferredTravelAirport ?: ''}">
+                                               placeholder="e.g., Indira Gandhi Airport">
                                     </div>
                                 </div>
                                 <div class="row" id="arrivalTrainFields" style="display:none;">
                                     <div class="col-md-6 mb-3">
-                                        <label for="arrivalTrainNumber" class="form-label">Train Number (if applicable)</label>
+                                        <label for="arrivalTrainNumber" class="form-label">Train Number (if
+                                            applicable)</label>
                                         <input type="text" th:field="*{arrivalTrainNumber}" class="form-control"
                                                placeholder="e.g., 12345">
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label for="arrivalStation" class="form-label">Station</label>
                                         <input type="text" th:field="*{arrivalStation}" class="form-control"
-                                               placeholder="e.g., New Delhi"
-                                               th:value="${travelInfo.arrivalStation ?: event.preferredTravelStation ?: ''}">
+                                               placeholder="e.g., New Delhi">
                                     </div>
                                 </div>
                             </div>
@@ -107,13 +121,15 @@
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label for="departureDateTime" class="form-label">Departure Date & Time</label>
-                                        <input type="datetime-local" th:field="*{departureDateTime}" class="form-control">
+                                        <input type="datetime-local" th:field="*{departureDateTime}"
+                                               class="form-control">
                                     </div>
                                 </div>
 
                                 <div class="row" id="departureFlightFields" style="display:none;">
                                     <div class="col-md-6 mb-3">
-                                        <label for="departureFlightNumber" class="form-label">Flight Number (if applicable)
+                                        <label for="departureFlightNumber" class="form-label">Flight Number (if
+                                            applicable)
                                         </label>
                                         <input type="text" th:field="*{departureFlightNumber}" class="form-control"
                                                placeholder="e.g., AI 124">
@@ -121,17 +137,13 @@
                                     <div class="col-md-6 mb-3">
                                         <label for="departureAirport" class="form-label">Airport</label>
                                         <input type="text" th:field="*{departureAirport}" class="form-control"
-                                               placeholder="e.g., Indira Gandhi Airport"
-                                               th:value="${travelInfo.departureAirport ?: event.preferredTravelAirport ?: ''}">
-                                        <small class="form-text text-muted">
-                                            Default: <span th:text="${event.preferredTravelAirport ?: 'Not set'}">Default airport
-                                            </span>
-                                        </small>
+                                               placeholder="e.g., Indira Gandhi Airport">
                                     </div>
                                 </div>
                                 <div class="row" id="departureTrainFields" style="display:none;">
                                     <div class="col-md-6 mb-3">
-                                        <label for="departureTrainNumber" class="form-label">Train Number (if applicable)
+                                        <label for="departureTrainNumber" class="form-label">Train Number (if
+                                            applicable)
                                         </label>
                                         <input type="text" th:field="*{departureTrainNumber}" class="form-control"
                                                placeholder="e.g., 67890">
@@ -139,11 +151,7 @@
                                     <div class="col-md-6 mb-3">
                                         <label for="departureStation" class="form-label">Station</label>
                                         <input type="text" th:field="*{departureStation}" class="form-control"
-                                               placeholder="e.g., New Delhi"
-                                               th:value="${travelInfo.departureStation ?: event.preferredTravelStation ?: ''}">
-                                        <small class="form-text text-muted">
-                                            Default: <span th:text="${event.preferredTravelStation ?: 'Not set'}">Default station</span>
-                                        </small>
+                                               placeholder="e.g., New Delhi">
                                     </div>
                                 </div>
                             </div>
@@ -157,7 +165,8 @@
                             <div class="card-body">
                                 <div class="mb-3">
                                     <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" th:field="*{needsPickup}" id="needsPickup">
+                                        <input class="form-check-input" type="checkbox" th:field="*{needsPickup}"
+                                               id="needsPickup">
                                         <label class="form-check-label" for="needsPickup">
                                             Need pickup from airport/station?
                                         </label>
@@ -165,7 +174,8 @@
                                 </div>
                                 <div class="mb-3">
                                     <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" th:field="*{needsDrop}" id="needsDrop">
+                                        <input class="form-check-input" type="checkbox" th:field="*{needsDrop}"
+                                               id="needsDrop">
                                         <label class="form-check-label" for="needsDrop">
                                             Need drop to airport/station?
                                         </label>
@@ -188,10 +198,30 @@
                                       placeholder="Any other information you'd like to share"></textarea>
                         </div>
 
+                        <!-- Attendee Details Section -->
+                        <div class="card mb-4 bg-light">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-person-check"></i> Attendee Details</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted small mb-3">Enter names and ages for each attendee (based on count from RSVP)</p>
+
+                                <!-- Attendee Input Fields -->
+                                <div id="attendeeFieldsContainer">
+                                    <!-- Fields will be generated by JavaScript -->
+                                </div>
+
+                                <div class="alert alert-info mt-3">
+                                    <i class="bi bi-info-circle"></i>
+                                    <strong>Note:</strong> The first attendee should be you. Please provide names for all attendees you confirmed in the RSVP.
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Buttons -->
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-warning btn-lg">
-                                <i class="bi bi-check-circle"></i> Save Travel Details
+                                <i class="bi bi-check-circle"></i> Save Travel Details & Attendees
                             </button>
                             <a href="/invitations" class="btn btn-outline-secondary">
                                 <i class="bi bi-arrow-left"></i> Cancel
@@ -206,66 +236,146 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-function toggleArrivalFields() {
-    const mode = document.getElementById('arrivalMode').value;
-    const flightFields = document.getElementById('arrivalFlightFields');
-    const trainFields = document.getElementById('arrivalTrainFields');
+    function toggleArrivalFields(shouldClearFields = true) {
+        const mode = document.getElementById('arrivalMode').value;
+        const flightFields = document.getElementById('arrivalFlightFields');
+        const trainFields = document.getElementById('arrivalTrainFields');
 
-    flightFields.style.display = 'none';
-    trainFields.style.display = 'none';
+        flightFields.style.display = 'none';
+        trainFields.style.display = 'none';
 
-    if (mode === 'FLIGHT') {
-        flightFields.style.display = 'flex';
-        // clear train-only fields
-        document.querySelector('[name="arrivalTrainNumber"]').value = '';
-        document.querySelector('[name="arrivalStation"]').value = '';
-    } else if (mode === 'TRAIN') {
-        trainFields.style.display = 'flex';
-        // clear flight-only fields
-        document.querySelector('[name="arrivalFlightNumber"]').value = '';
-        document.querySelector('[name="arrivalAirport"]').value = '';
-    } else {
-        // clear all mode-specific fields
-        document.querySelector('[name="arrivalFlightNumber"]').value = '';
-        document.querySelector('[name="arrivalAirport"]').value = '';
-        document.querySelector('[name="arrivalTrainNumber"]').value = '';
-        document.querySelector('[name="arrivalStation"]').value = '';
+        if (mode === 'FLIGHT') {
+            flightFields.style.display = 'block';
+            if (shouldClearFields) {
+                // clear train-only fields only on mode change
+                document.querySelector('[name="arrivalTrainNumber"]').value = '';
+                document.querySelector('[name="arrivalStation"]').value = '';
+            }
+        } else if (mode === 'TRAIN') {
+            trainFields.style.display = 'block';
+            if (shouldClearFields) {
+                // clear flight-only fields only on mode change
+                document.querySelector('[name="arrivalFlightNumber"]').value = '';
+                document.querySelector('[name="arrivalAirport"]').value = '';
+            }
+        }
+        // Don't clear fields if no mode selected - preserve pre-populated values
     }
-}
 
-function toggleDepartureFields() {
-    const mode = document.getElementById('departureMode').value;
-    const flightFields = document.getElementById('departureFlightFields');
-    const trainFields = document.getElementById('departureTrainFields');
+    function toggleDepartureFields(shouldClearFields = true) {
+        const mode = document.getElementById('departureMode').value;
+        const flightFields = document.getElementById('departureFlightFields');
+        const trainFields = document.getElementById('departureTrainFields');
 
-    flightFields.style.display = 'none';
-    trainFields.style.display = 'none';
+        flightFields.style.display = 'none';
+        trainFields.style.display = 'none';
 
-    if (mode === 'FLIGHT') {
-        flightFields.style.display = 'flex';
-        // clear train-only fields
-        document.querySelector('[name="departureTrainNumber"]').value = '';
-        document.querySelector('[name="departureStation"]').value = '';
-    } else if (mode === 'TRAIN') {
-        trainFields.style.display = 'flex';
-        // clear flight-only fields
-        document.querySelector('[name="departureFlightNumber"]').value = '';
-        document.querySelector('[name="departureAirport"]').value = '';
-    } else {
-        // clear all mode-specific fields
-        document.querySelector('[name="departureFlightNumber"]').value = '';
-        document.querySelector('[name="departureAirport"]').value = '';
-        document.querySelector('[name="departureTrainNumber"]').value = '';
-        document.querySelector('[name="departureStation"]').value = '';
+        if (mode === 'FLIGHT') {
+            flightFields.style.display = 'block';
+            if (shouldClearFields) {
+                // clear train-only fields only on mode change
+                document.querySelector('[name="departureTrainNumber"]').value = '';
+                document.querySelector('[name="departureStation"]').value = '';
+            }
+        } else if (mode === 'TRAIN') {
+            trainFields.style.display = 'block';
+            if (shouldClearFields) {
+                // clear flight-only fields only on mode change
+                document.querySelector('[name="departureFlightNumber"]').value = '';
+                document.querySelector('[name="departureAirport"]').value = '';
+            }
+        }
+        // Don't clear fields if no mode selected - preserve pre-populated values
     }
-}
 
-document.addEventListener('DOMContentLoaded', function() {
-    toggleArrivalFields();
-    toggleDepartureFields();
-    document.getElementById('arrivalMode').addEventListener('change', toggleArrivalFields);
-    document.getElementById('departureMode').addEventListener('change', toggleDepartureFields);
-});
+    document.addEventListener('DOMContentLoaded', function() {
+        // On page load, show fields based on selected mode but don't clear values
+        toggleArrivalFields(false);
+        toggleDepartureFields(false);
+        // Generate attendee fields based on RSVP count
+        generateAttendeeFields();
+        // On user change, clear conflicting fields
+        document.getElementById('arrivalMode').addEventListener('change', function() {
+            toggleArrivalFields(true);
+        });
+        document.getElementById('departureMode').addEventListener('change', function() {
+            toggleDepartureFields(true);
+        });
+    });
+
+    // Get RSVP attendee count from page data
+    const rsvpAttendeeCount = [[${rsvp?.attendeeCount ?: 1}]];
+    const existingAttendees = [[${attendees}]];
+
+    function generateAttendeeFields() {
+        const count = rsvpAttendeeCount;
+        const container = document.getElementById('attendeeFieldsContainer');
+
+        for (let i = 0; i < count; i++) {
+            const fieldGroup = document.createElement('div');
+            fieldGroup.className = 'attendee-field-group';
+            fieldGroup.style.backgroundColor = '#f8f9fa';
+            fieldGroup.style.borderLeft = '4px solid #0d6efd';
+            fieldGroup.style.padding = '1rem';
+            fieldGroup.style.marginBottom = '1rem';
+            fieldGroup.style.borderRadius = '0.25rem';
+
+            const existingAttendee = existingAttendees && existingAttendees[i] ? existingAttendees[i] : null;
+            const name = existingAttendee ? existingAttendee.name : '';
+            const age = existingAttendee ? existingAttendee.ageGroup : '';
+
+            fieldGroup.innerHTML = `
+                <div class="row">
+                    <div class="col-md-8 mb-3">
+                        <label for="attendeeName_${i}" class="form-label">
+                            <strong>Attendee ${i + 1} Name</strong>
+                            ${i === 0 ? '<span class="text-muted small">(You)</span>' : ''}
+                        </label>
+                        <input type="text"
+                               class="form-control"
+                               id="attendeeName_${i}"
+                               name="attendeeNames"
+                               placeholder="Enter full name"
+                               value="${name}"
+                               required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="attendeeAge_${i}" class="form-label"><strong>Age</strong></label>
+                        <select class="form-select"
+                                id="attendeeAge_${i}"
+                                name="attendeeAges"
+                                required>
+                            <option value="">-- Select --</option>
+                            <option value="Adult" ${age === 'Adult' ? 'selected' : ''}>Adult</option>
+                            <option value="Child" ${age === 'Child' ? 'selected' : ''}>Child (6-12)</option>
+                            <option value="Infant" ${age === 'Infant' ? 'selected' : ''}>Infant (0-5)</option>
+                        </select>
+                    </div>
+                </div>
+            `;
+            container.appendChild(fieldGroup);
+        }
+    }
+
+    // Form submission - ensure attendee fields are populated
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const nameInputs = document.querySelectorAll('input[name="attendeeNames"]');
+        const ageSelects = document.querySelectorAll('select[name="attendeeAges"]');
+
+        // Validate all attendee fields are filled
+        for (let i = 0; i < nameInputs.length; i++) {
+            if (!nameInputs[i].value.trim()) {
+                alert('Please enter name for Attendee ' + (i + 1));
+                e.preventDefault();
+                return false;
+            }
+            if (!ageSelects[i].value) {
+                alert('Please select age group for Attendee ' + (i + 1));
+                e.preventDefault();
+                return false;
+            }
+        }
+    });
 </script>
 </body>
 </html>

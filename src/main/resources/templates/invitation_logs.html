@@ -8,7 +8,7 @@
 <body class="bg-light">
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
     <div class="container-fluid">
-        <a class="navbar-brand" href="/admin/dashboard">Moments Manager</a>
+        <a class="navbar-brand" href="/admin/dashboard">WedKnots</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -118,7 +118,7 @@
                     <tr>
                         <th>Guest</th>
                         <th>Contact</th>
-                        <th>WhatsApp Number</th>
+                        <th>Method</th>
                         <th>Status</th>
                         <th>Sent At</th>
                         <th>Delivered At</th>
@@ -137,8 +137,12 @@
                             <small th:text="${log.guest.contactEmail}"></small>
                         </td>
                         <td>
-                            <i class="bi bi-whatsapp text-success"></i>
-                            <span th:text="${log.whatsappNumber}"></span>
+                            <span th:if="${log.invitationMethod == 'WHATSAPP'}" class="badge bg-info">
+                                <i class="bi bi-whatsapp"></i> WhatsApp
+                            </span>
+                            <span th:if="${log.invitationMethod == 'EXTERNAL'}" class="badge bg-secondary">
+                                <i class="bi bi-person-check"></i> <span th:text="${log.externalMethodDescription}"></span>
+                            </span>
                         </td>
                         <td>
                             <span th:if="${log.deliveryStatus == 'PENDING'}" class="badge bg-warning">Pending</span>

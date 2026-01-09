@@ -168,4 +168,67 @@ public class InvitationLogService {
 
         invitationLogRepository.save(log);
     }
+
+    /**
+     * Mark an invitation as sent externally (email, phone call, in-person, etc.)
+     * Creates an invitation log without actually sending via WhatsApp
+     */
+    @Transactional
+    public InvitationLog markInvitationSentExternally(Long invitationId, Long guestId,
+                                                       String externalMethod, String sentBy) {
+        Optional<Invitation> invitationOpt = invitationRepository.findById(invitationId);
+        Optional<Guest> guestOpt = guestRepository.findById(guestId);
+
+        if (invitationOpt.isEmpty()) {
+            throw new RuntimeException("Invitation not found with id: " + invitationId);
+        }
+        if (guestOpt.isEmpty()) {
+            throw new RuntimeException("Guest not found with id: " + guestId);
+        }
+
+        Invitation invitation = invitationOpt.get();
+        Guest guest = guestOpt.get();
+
+        // Check if invitation already sent to this guest
+        Optional<InvitationLog> existingLog = invitationLogRepository.findByInvitationIdAndGuestId(invitationId, guestId);
+        if (existingLog.isPresent()) {
+            logger.info("Invitation already sent to guest: {}", guestId);
+            throw new RuntimeException("Invitation already sent to this guest");
+        }
+
+        // Create invitation log for external invitation
+        InvitationLog log = InvitationLog.builder()
+                .invitation(invitation)
+                .guest(guest)
+                .sentBy(sentBy)
+                .sentAt(LocalDateTime.now())
+                .deliveryStatus("SENT")
+                .deliveryTimestamp(LocalDateTime.now())
+                .invitationMethod("EXTERNAL")
+                .externalMethodDescription(externalMethod)
+                .build();
+
+        InvitationLog savedLog = invitationLogRepository.save(log);
+        logger.info("Marked invitation {} as sent externally to guest {} via {}",
+                   invitationId, guestId, externalMethod);
+        return savedLog;
+    }
+
+    /**
+     * Mark multiple invitations as sent externally
+     */
+    @Transactional
+    public List<InvitationLog> markMultipleInvitationsSentExternally(Long invitationId, List<Long> guestIds,
+                                                                      String externalMethod, String sentBy) {
+        List<InvitationLog> logs = new ArrayList<>();
+        for (Long guestId : guestIds) {
+            try {
+                InvitationLog log = markInvitationSentExternally(invitationId, guestId, externalMethod, sentBy);
+                logs.add(log);
+            } catch (Exception e) {
+                logger.warn("Failed to mark invitation as sent externally for guest {}: {}", guestId, e.getMessage());
+            }
+        }
+        return logs;
+    }
 }

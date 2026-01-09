@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDateTime;
 
@@ -27,6 +28,7 @@ public class TravelInfo {
     @Enumerated(EnumType.STRING)
     private ModeOfTravel arrivalMode; // Flight, Train, Car, Bus, etc.
 
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     @Column(name = "arrival_date_time")
     private LocalDateTime arrivalDateTime;
 
@@ -47,6 +49,7 @@ public class TravelInfo {
     @Enumerated(EnumType.STRING)
     private ModeOfTravel departureMode; // Flight, Train, Car, Bus, etc.
 
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     @Column(name = "departure_date_time")
     private LocalDateTime departureDateTime;
 

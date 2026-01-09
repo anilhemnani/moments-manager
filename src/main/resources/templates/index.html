@@ -1,74 +1,860 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Moments Manager - Home</title>
+    <title>WedKnots – Your Smart Wedding Concierge</title>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="WedKnots – Your Smart Wedding Concierge - Comprehensive wedding event management platform">
+    <link rel="icon" type="image/png" href="/icon">
     <th:block th:replace="~{_bootstrap_head :: head}"></th:block>
+    <style>
+        .hero-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 100px 0 80px;
+            text-align: center;
+        }
+        .hero-logo {
+            max-width: 60px;
+            height: auto;
+            filter: brightness(0) invert(1);
+        }
+        .section-title {
+            color: #667eea;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+        }
+        .feature-card {
+            transition: all 0.3s ease;
+            border: none;
+            height: 100%;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+        }
+        .feature-icon {
+            font-size: 2.5rem;
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+        .btn-primary-custom {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 12px 35px;
+            font-weight: 500;
+        }
+        .btn-primary-custom:hover {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            transform: translateY(-2px);
+        }
+        .contact-form {
+            background: #f8f9fa;
+            padding: 2rem;
+            border-radius: 10px;
+        }
+        footer {
+            background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+        }
+    </style>
 </head>
-<body class="bg-light">
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="/">Moments Manager</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-auto">
-        <!-- Register link removed - users are pre-created by admin -->
-      </ul>
+<body>
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="/" style="font-size: 1rem;">
+            <img src="/icon" alt="WedKnots" height="35" class="me-2">
+            WedKnots – Your Smart Wedding Concierge
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" href="#features">Features</a></li>
+                <li class="nav-item"><a class="nav-link" href="#pricing">Pricing</a></li>
+                <li class="nav-item"><a class="nav-link" href="#how-it-works">How It Works</a></li>
+                <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
+                <li class="nav-item"><a class="nav-link" href="/privacy-policy">Privacy</a></li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle btn btn-outline-light btn-sm ms-2" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-box-arrow-in-right"></i> Login
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="/login/guest"><i class="bi bi-person"></i> Guest</a></li>
+                        <li><a class="dropdown-item" href="/login/host"><i class="bi bi-house-door"></i> Host</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="/login/admin"><i class="bi bi-shield-lock"></i> Admin</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
     </div>
-  </div>
 </nav>
-<div class="container py-5">
-  <div class="row justify-content-center">
-    <div class="col-md-8">
-      <div class="text-center mb-5">
-        <h1 class="display-4 fw-bold">Welcome to Moments Manager</h1>
-        <p class="lead text-muted">Manage your Indian Wedding Events and RSVPs</p>
-      </div>
 
-      <div class="row g-4">
-        <div class="col-md-4">
-          <div class="card shadow-sm h-100 text-center">
-            <div class="card-body d-flex flex-column">
-              <div class="mb-3">
-                <i class="bi bi-person-circle" style="font-size: 3rem; color: #0d6efd;"></i>
-              </div>
-              <h5 class="card-title">Guest Portal</h5>
-              <p class="card-text flex-grow-1">Access your RSVP and event details</p>
-              <a href="/guest/dashboard" class="btn btn-primary mt-auto">Go to Guest Dashboard</a>
-            </div>
-          </div>
+<!-- Hero Section -->
+<div class="hero-section">
+    <div class="container">
+        <div class="d-flex align-items-center justify-content-center mb-4">
+            <img src="/icon" alt="WedKnots" class="hero-logo me-3">
+            <h1 class="display-4 fw-bold mb-0">WedKnots – Your Smart Wedding Concierge</h1>
         </div>
-
-        <div class="col-md-4">
-          <div class="card shadow-sm h-100 text-center">
-            <div class="card-body d-flex flex-column">
-              <div class="mb-3">
-                <i class="bi bi-house-door" style="font-size: 3rem; color: #198754;"></i>
-              </div>
-              <h5 class="card-title">Host Portal</h5>
-              <p class="card-text flex-grow-1">Manage events and guest lists</p>
-              <a href="/host/dashboard" class="btn btn-success mt-auto">Go to Host Dashboard</a>
-            </div>
-          </div>
+        <p class="lead mb-2">Effortlessly manage every detail of your wedding celebration</p>
+        <p class="mb-3"><em>Perfect for Indian weddings – we help you handle all the drama gracefully!</em></p>
+        <div class="mb-4">
+            <span class="badge bg-light text-dark fs-5 px-4 py-2">
+                <i class="bi bi-gift-fill text-success me-2"></i>
+                FREE for up to 300 guests
+            </span>
         </div>
-
-        <div class="col-md-4">
-          <div class="card shadow-sm h-100 text-center">
-            <div class="card-body d-flex flex-column">
-              <div class="mb-3">
-                <i class="bi bi-shield-lock" style="font-size: 3rem; color: #dc3545;"></i>
-              </div>
-              <h5 class="card-title">Admin Portal</h5>
-              <p class="card-text flex-grow-1">System administration and management</p>
-              <a href="/admin/dashboard" class="btn btn-danger mt-auto">Go to Admin Dashboard</a>
-            </div>
-          </div>
+        <div class="mt-4">
+            <a href="#contact" class="btn btn-light btn-lg btn-primary-custom me-3">Get Started</a>
+            <a href="#pricing" class="btn btn-outline-light btn-lg">See Pricing</a>
         </div>
-      </div>
     </div>
-  </div>
 </div>
+
+<!-- Features Section -->
+<section id="features" class="py-5">
+    <div class="container">
+        <h2 class="text-center section-title display-6">Everything You Need</h2>
+        <p class="text-center text-muted mb-5">Powerful features to make your wedding planning seamless</p>
+
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-4">
+                <div class="card feature-card shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <i class="bi bi-people-fill feature-icon"></i>
+                        <h5 class="fw-bold">Guest Management</h5>
+                        <p class="text-muted">Organize guest lists, track RSVPs, and manage attendee details in one place</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+                <div class="card feature-card shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <i class="bi bi-chat-dots-fill feature-icon"></i>
+                        <h5 class="fw-bold">WhatsApp Integration</h5>
+                        <p class="text-muted">Send invitations and updates directly via WhatsApp for instant communication</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+                <div class="card feature-card shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <i class="bi bi-airplane-fill feature-icon"></i>
+                        <h5 class="fw-bold">Travel Coordination</h5>
+                        <p class="text-muted">Track guest travel details and coordinate pickups seamlessly</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+                <div class="card feature-card shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <i class="bi bi-calendar-check-fill feature-icon"></i>
+                        <h5 class="fw-bold">RSVP Tracking</h5>
+                        <p class="text-muted">Real-time RSVP monitoring with automated reminders and confirmations</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+                <div class="card feature-card shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <i class="bi bi-shield-check-fill feature-icon"></i>
+                        <h5 class="fw-bold">Secure & Private</h5>
+                        <p class="text-muted">Enterprise-grade security with role-based access control</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+                <div class="card feature-card shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <i class="bi bi-phone-fill feature-icon"></i>
+                        <h5 class="fw-bold">Mobile Friendly</h5>
+                        <p class="text-muted">Access from any device - desktop, tablet, or smartphone</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section id="how-it-works" class="py-5 bg-light">
+    <div class="container">
+        <h2 class="text-center section-title display-6">How It Works</h2>
+        <p class="text-center text-muted mb-5">Simple steps to manage your wedding</p>
+
+        <div class="row">
+            <div class="col-lg-6 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body p-4">
+                        <h3 class="h5 fw-bold text-primary mb-3">
+                            <span class="badge bg-primary rounded-circle me-2">1</span> For Hosts
+                        </h3>
+                        <ul class="list-unstyled ms-4">
+                            <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Create your wedding event</li>
+                            <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Add guests with contact details</li>
+                            <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Send invitations via WhatsApp</li>
+                            <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Track RSVPs in real-time</li>
+                            <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Monitor travel arrangements</li>
+                            <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Stay connected with guests</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body p-4">
+                        <h3 class="h5 fw-bold text-success mb-3">
+                            <span class="badge bg-success rounded-circle me-2">2</span> For Guests
+                        </h3>
+                        <ul class="list-unstyled ms-4">
+                            <li class="mb-2"><i class="bi bi-check-circle-fill text-primary me-2"></i>Receive invitation on WhatsApp</li>
+                            <li class="mb-2"><i class="bi bi-check-circle-fill text-primary me-2"></i>View wedding details online</li>
+                            <li class="mb-2"><i class="bi bi-check-circle-fill text-primary me-2"></i>Confirm attendance with RSVP</li>
+                            <li class="mb-2"><i class="bi bi-check-circle-fill text-primary me-2"></i>Add attendee information</li>
+                            <li class="mb-2"><i class="bi bi-check-circle-fill text-primary me-2"></i>Share travel details</li>
+                            <li class="mb-2"><i class="bi bi-check-circle-fill text-primary me-2"></i>Stay updated on changes</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Pricing Section -->
+<section id="pricing" class="py-5">
+    <div class="container">
+        <h2 class="text-center section-title display-6">Pricing That Makes Sense</h2>
+        <p class="text-center text-muted mb-5">No hidden fees, no surprises</p>
+
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="card shadow-lg border-0" style="border: 3px solid #667eea;">
+                    <div class="card-body p-5 text-center">
+                        <div class="mb-4">
+                            <i class="bi bi-gift-fill" style="font-size: 3rem; color: #667eea;"></i>
+                        </div>
+                        <h3 class="display-4 fw-bold mb-3" style="color: #667eea;">100% FREE</h3>
+                        <p class="lead mb-4">For weddings with up to <strong>300 guests</strong></p>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <div class="p-3 bg-light rounded">
+                                    <i class="bi bi-clock-fill text-success d-block mb-2" style="font-size: 2rem;"></i>
+                                    <h5 class="fw-bold mb-1">Save Time</h5>
+                                    <p class="text-muted small mb-0">Automated invitations and tracking</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="p-3 bg-light rounded">
+                                    <i class="bi bi-lightning-fill text-warning d-block mb-2" style="font-size: 2rem;"></i>
+                                    <h5 class="fw-bold mb-1">Save Effort</h5>
+                                    <p class="text-muted small mb-0">Everything in one platform</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="p-3 bg-light rounded">
+                                    <i class="bi bi-piggy-bank-fill text-info d-block mb-2" style="font-size: 2rem;"></i>
+                                    <h5 class="fw-bold mb-1">Save Money</h5>
+                                    <p class="text-muted small mb-0">No upfront costs or fees</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info mb-4">
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                            <strong>Pay What You Want:</strong> After your wedding, we may send you a request for feedback and an optional contribution.
+                            You're free to contribute what you feel is fair, or nothing at all—it's completely at your discretion.
+                        </div>
+
+                        <div class="bg-light p-4 rounded mb-4">
+                            <h5 class="fw-bold mb-3"><i class="bi bi-people-fill me-2"></i>Need to manage more than 300 guests?</h5>
+                            <p class="mb-3">For larger weddings, we offer customized pricing based on your needs.</p>
+                            <a href="#contact" class="btn btn-primary-custom">Contact Us for Pricing</a>
+                        </div>
+
+                        <div class="text-muted">
+                            <small>
+                                <i class="bi bi-shield-check-fill text-success me-1"></i>
+                                No credit card required • No hidden fees • Cancel anytime
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-5 bg-gradient text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+    <div class="container text-center">
+        <h2 class="display-5 fw-bold mb-3">Ready to Plan Your Wedding?</h2>
+        <p class="lead mb-2">Get started absolutely FREE for up to 300 guests</p>
+        <p class="mb-4">No credit card required • No hidden fees • Pay only what you want after your wedding</p>
+        <a href="#contact" class="btn btn-light btn-lg btn-primary-custom">Get Started Now</a>
+    </div>
+</section>
+
+<!-- Contact Section -->
+<section id="contact" class="py-5">
+    <div class="container">
+        <h2 class="text-center section-title display-6">Contact Us</h2>
+        <p class="text-center text-muted mb-5">Get in touch to set up your wedding account</p>
+
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="contact-form">
+                    <form id="contactForm" method="POST" action="/contact/submit">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Full Name *</label>
+                                <input type="text" class="form-control" name="fullName" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Email *</label>
+                                <input type="email" class="form-control" name="email" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Phone *</label>
+                                <input type="tel" class="form-control" name="phoneNumber" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Wedding Date *</label>
+                                <input type="date" class="form-control" name="weddingDate" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Location</label>
+                                <input type="text" class="form-control" name="location">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Expected Guests</label>
+                                <input type="number" class="form-control" name="guestCount" min="1">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Message *</label>
+                                <textarea class="form-control" name="message" rows="4" required placeholder="Tell us about your wedding plans..."></textarea>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary-custom btn-lg w-100">
+                                    <i class="bi bi-send"></i> Send Message
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="text-center mt-4">
+                    <p class="text-muted">
+                        <i class="bi bi-envelope-fill me-2"></i>
+                        <a href="mailto:anil.hemnani@gmail.com">anil.hemnani@gmail.com</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Existing Users Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <h2 class="text-center section-title display-6 mb-5">Already Have an Account?</h2>
+        <div class="row g-4 justify-content-center">
+            <div class="col-md-4">
+                <div class="card feature-card shadow text-center">
+                    <div class="card-body p-4">
+                        <i class="bi bi-person-circle feature-icon text-primary"></i>
+                        <h5 class="fw-bold">Guest Login</h5>
+                        <p class="text-muted mb-3">View invitations and manage your RSVP</p>
+                        <a href="/login/guest" class="btn btn-primary w-100">Login as Guest</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card feature-card shadow text-center">
+                    <div class="card-body p-4">
+                        <i class="bi bi-house-door-fill feature-icon text-success"></i>
+                        <h5 class="fw-bold">Host Login</h5>
+                        <p class="text-muted mb-3">Manage your wedding events and guests</p>
+                        <a href="/login/host" class="btn btn-success w-100">Login as Host</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="text-white py-4">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 mb-3 mb-md-0">
+                <div class="d-flex align-items-center mb-2">
+                    <img src="/icon" alt="WedKnots" height="30" class="me-2" style="filter: brightness(0) invert(1);">
+                    <h5 class="fw-bold mb-0">WedKnots – Your Smart Wedding Concierge</h5>
+                </div>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <a href="#features" class="text-white-50 text-decoration-none me-3">Features</a>
+                <a href="#how-it-works" class="text-white-50 text-decoration-none me-3">How It Works</a>
+                <a href="#contact" class="text-white-50 text-decoration-none me-3">Contact</a>
+                <a href="/privacy-policy" class="text-white-50 text-decoration-none">Privacy</a>
+            </div>
+        </div>
+        <hr class="my-3 bg-white-50">
+        <div class="text-center text-white-50">
+            <small>&copy; 2026 WedKnots. All rights reserved.</small>
+        </div>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.getElementById('contactForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const btn = this.querySelector('button[type="submit"]');
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Sending...';
+
+    setTimeout(() => {
+        alert('Thank you! We will contact you at ' + this.email.value);
+        this.reset();
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }, 1500);
+});
+</script>
 </body>
 </html>
+<!-- Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" href="/">
+            <img src="/icon" alt="WedKnots Logo" height="40">
+            WedKnots
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="#capabilities">Capabilities</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#features">Features</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#contact">Contact Us</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/privacy-policy">Privacy Policy</a>
+                </li>
+                <li class="nav-item login-dropdown">
+                    <a class="nav-link btn btn-outline-light btn-sm ms-2" style="cursor: pointer;">
+                        <i class="bi bi-box-arrow-in-right"></i> Login
+                    </a>
+                    <div class="login-menu">
+                        <a href="/login/guest"><i class="bi bi-person-circle"></i> Guest Login</a>
+                        <a href="/login/host"><i class="bi bi-house-door"></i> Host Login</a>
+                        <a href="/login/admin"><i class="bi bi-shield-lock"></i> Admin Login</a>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Hero Section -->
+<div class="hero-section">
+    <div class="container">
+        <img src="/icon" alt="Moments Manager" class="hero-logo">
+        <h1 class="display-3 fw-bold mb-4">Welcome to WedKnots</h1>
+        <p class="lead mb-4">Your Smart Wedding Concierge</p>
+        <p class="fs-5 mb-5">Coordinate every aspect of your Indian wedding with ease - from RSVP management to travel coordination and guest communication</p>
+        <div>
+            <a href="#contact" class="btn btn-light btn-lg cta-button me-3">
+                <i class="bi bi-envelope"></i> Start Your Wedding Journey
+            </a>
+            <a href="#features" class="btn btn-outline-light btn-lg cta-button">
+                <i class="bi bi-arrow-down"></i> Learn More
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="container py-5">
+    <!-- About Section -->
+    <section class="mb-5">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-4 mb-lg-0">
+                <h2 class="h1 fw-bold mb-4">What is WedKnots?</h2>
+                <p class="lead text-muted mb-3">
+                    WedKnots – Your Smart Wedding Concierge is a comprehensive platform designed to simplify the complex process of planning and executing Indian weddings. Whether you're hosting a wedding or attending one, our platform brings everything together in one place.
+                </p>
+                <p class="text-muted mb-3">
+                    With our intuitive interface and powerful features, event hosts can effortlessly manage guest lists, track RSVPs, coordinate travel arrangements, and stay connected with guests through integrated WhatsApp communication.
+                </p>
+                <p class="text-muted">
+                    Guests enjoy a seamless experience - from receiving invitations to managing their attendance, adding travel details, and communicating with event hosts.
+                </p>
+            </div>
+            <div class="col-lg-6">
+                <div class="card shadow-lg">
+                    <div class="card-body text-center py-5">
+                        <img src="/icon" alt="Moments Manager" style="max-width: 200px; opacity: 0.9;">
+                        <p class="mt-3 text-muted">Manage your wedding events with confidence and elegance</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="section-divider"></div>
+
+    <!-- Capabilities Section -->
+    <section id="capabilities" class="mb-5">
+        <h2 class="h1 fw-bold text-center mb-5">Core Capabilities</h2>
+        <div class="row">
+            <div class="col-lg-6">
+                <h3 class="h4 fw-bold mb-4"><i class="bi bi-house-door" style="color: #667eea;"></i> For Event Hosts</h3>
+                <div class="capability-item">
+                    <strong><i class="bi bi-person-check"></i> Guest Management</strong>
+                    <p class="mb-0 text-muted">Create and manage guest lists, track invitations, and monitor RSVP responses in real-time</p>
+                </div>
+                <div class="capability-item">
+                    <strong><i class="bi bi-telephone"></i> WhatsApp Integration</strong>
+                    <p class="mb-0 text-muted">Send invitations and updates directly via WhatsApp Business API for better engagement</p>
+                </div>
+                <div class="capability-item">
+                    <strong><i class="bi bi-airplane"></i> Travel Coordination</strong>
+                    <p class="mb-0 text-muted">Track guest travel details, arrival/departure dates, and preferences for airport/station pickup</p>
+                </div>
+                <div class="capability-item">
+                    <strong><i class="bi bi-graph-up"></i> Analytics & Reporting</strong>
+                    <p class="mb-0 text-muted">Get detailed insights into RSVP status, attendee counts, and travel arrangements</p>
+                </div>
+                <div class="capability-item">
+                    <strong><i class="bi bi-lock"></i> Secure Data Management</strong>
+                    <p class="mb-0 text-muted">Encrypted data storage with role-based access control for complete security</p>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <h3 class="h4 fw-bold mb-4"><i class="bi bi-person-circle" style="color: #764ba2;"></i> For Event Guests</h3>
+                <div class="capability-item">
+                    <strong><i class="bi bi-envelope-open"></i> Easy Invitations</strong>
+                    <p class="mb-0 text-muted">Receive wedding invitations directly via WhatsApp with all event details</p>
+                </div>
+                <div class="capability-item">
+                    <strong><i class="bi bi-calendar-check"></i> Simple RSVP</strong>
+                    <p class="mb-0 text-muted">Confirm your attendance, specify number of attendees, and manage your response easily</p>
+                </div>
+                <div class="capability-item">
+                    <strong><i class="bi bi-people-fill"></i> Attendee Management</strong>
+                    <p class="mb-0 text-muted">Add details about all attendees including names and age groups</p>
+                </div>
+                <div class="capability-item">
+                    <strong><i class="bi bi-map"></i> Travel Planning</strong>
+                    <p class="mb-0 text-muted">Share your travel plans, flight/train details, and preferred arrival/departure times</p>
+                </div>
+                <div class="capability-item">
+                    <strong><i class="bi bi-chat-dots"></i> Direct Communication</strong>
+                    <p class="mb-0 text-muted">Stay updated with important event information and updates from hosts</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="section-divider"></div>
+
+    <!-- Features Section -->
+    <section id="features" class="mb-5">
+        <h2 class="h1 fw-bold text-center mb-5">Why Choose Moments Manager?</h2>
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-4">
+                <div class="card shadow-sm feature-card h-100">
+                    <div class="card-body text-center">
+                        <div class="feature-icon" style="color: #667eea;">
+                            <i class="bi bi-speedometer2"></i>
+                        </div>
+                        <h5 class="card-title">Fast & Efficient</h5>
+                        <p class="card-text text-muted">Streamlined process to save time and effort in wedding planning</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+                <div class="card shadow-sm feature-card h-100">
+                    <div class="card-body text-center">
+                        <div class="feature-icon" style="color: #764ba2;">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+                        <h5 class="card-title">Secure & Private</h5>
+                        <p class="card-text text-muted">Your data is encrypted and protected with enterprise-grade security</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+                <div class="card shadow-sm feature-card h-100">
+                    <div class="card-body text-center">
+                        <div class="feature-icon" style="color: #198754;">
+                            <i class="bi bi-phone"></i>
+                        </div>
+                        <h5 class="card-title">Mobile Friendly</h5>
+                        <p class="card-text text-muted">Access from any device - works seamlessly on mobile, tablet, and desktop</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+                <div class="card shadow-sm feature-card h-100">
+                    <div class="card-body text-center">
+                        <div class="feature-icon" style="color: #0d6efd;">
+                            <i class="bi bi-chat-left-text"></i>
+                        </div>
+                        <h5 class="card-title">Integrated Messaging</h5>
+                        <p class="card-text text-muted">WhatsApp integration for direct communication with all guests</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+                <div class="card shadow-sm feature-card h-100">
+                    <div class="card-body text-center">
+                        <div class="feature-icon" style="color: #dc3545;">
+                            <i class="bi bi-graph-up"></i>
+                        </div>
+                        <h5 class="card-title">Real-time Analytics</h5>
+                        <p class="card-text text-muted">Get instant insights into RSVPs, attendance, and travel details</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+                <div class="card shadow-sm feature-card h-100">
+                    <div class="card-body text-center">
+                        <div class="feature-icon" style="color: #fd7e14;">
+                            <i class="bi bi-headset"></i>
+                        </div>
+                        <h5 class="card-title">Expert Support</h5>
+                        <p class="card-text text-muted">Dedicated support to help you manage your wedding event smoothly</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="section-divider"></div>
+
+    <!-- Account Setup Information -->
+    <section class="mb-5">
+        <div class="alert alert-info alert-lg" role="alert">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <h4 class="alert-heading"><i class="bi bi-info-circle"></i> Getting Started</h4>
+                    <p class="mb-2">To manage your wedding event on Moments Manager, you'll need to set up your account with us. Our team will help you create your wedding profile and configure all the necessary settings for your event.</p>
+                    <p class="mb-0"><strong>Contact us below to get started!</strong></p>
+                </div>
+                <div class="col-lg-4 text-center mt-3 mt-lg-0">
+                    <a href="#contact" class="btn btn-primary btn-lg cta-button">
+                        <i class="bi bi-envelope"></i> Contact Us
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- Contact Section -->
+<section id="contact" class="contact-section">
+    <div class="container">
+        <h2 class="h1 fw-bold text-center mb-5">Get In Touch</h2>
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card shadow">
+                    <div class="card-body p-5">
+                        <p class="text-muted text-center mb-4">
+                            Ready to manage your wedding with Moments Manager? Fill out the form below and we'll get back to you shortly to discuss your wedding event setup.
+                        </p>
+
+                        <form id="contactForm" name="contactForm" method="POST" action="/contact/submit">
+                            <div class="mb-3">
+                                <label for="fullName" class="form-label"><strong>Full Name *</strong></label>
+                                <input type="text" class="form-control" id="fullName" name="fullName" required placeholder="Your full name">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="email" class="form-label"><strong>Email Address *</strong></label>
+                                <input type="email" class="form-control" id="email" name="email" required placeholder="your.email@example.com">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="phoneNumber" class="form-label"><strong>Phone Number *</strong></label>
+                                <input type="tel" class="form-control" id="phoneNumber" name="phoneNumber" required placeholder="+91 XXXXX XXXXX">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="weddingDate" class="form-label"><strong>Wedding Date *</strong></label>
+                                <input type="date" class="form-control" id="weddingDate" name="weddingDate" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="location" class="form-label"><strong>Wedding Location</strong></label>
+                                <input type="text" class="form-control" id="location" name="location" placeholder="City/venue name">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="guestCount" class="form-label"><strong>Expected Number of Guests</strong></label>
+                                <input type="number" class="form-control" id="guestCount" name="guestCount" placeholder="Approximate guest count">
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="message" class="form-label"><strong>Message *</strong></label>
+                                <textarea class="form-control" id="message" name="message" rows="4" required placeholder="Tell us more about your wedding event and any specific requirements..."></textarea>
+                            </div>
+
+                            <div class="d-grid gap-2 mb-3">
+                                <button type="submit" class="btn btn-primary btn-lg cta-button">
+                                    <i class="bi bi-send"></i> Send Message
+                                </button>
+                            </div>
+
+                            <p class="text-muted text-center text-sm mb-0">
+                                <i class="bi bi-shield-check"></i> We respect your privacy. Your information will be used only to help set up your wedding event.
+                            </p>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-5">
+            <div class="col-md-4 text-center mb-4">
+                <h5 class="fw-bold"><i class="bi bi-envelope" style="color: #667eea;"></i> Email</h5>
+                <p class="text-muted">
+                    <a href="mailto:anil.hemnani@gmail.com" class="text-decoration-none">anil.hemnani@gmail.com</a>
+                </p>
+            </div>
+            <div class="col-md-4 text-center mb-4">
+                <h5 class="fw-bold"><i class="bi bi-telephone" style="color: #764ba2;"></i> Support</h5>
+                <p class="text-muted">Contact us for account setup and assistance</p>
+            </div>
+            <div class="col-md-4 text-center mb-4">
+                <h5 class="fw-bold"><i class="bi bi-chat-dots" style="color: #198754;"></i> Response Time</h5>
+                <p class="text-muted">We typically respond within 24 hours</p>
+            </div>
+        </div>
+    </section>
+
+<!-- Portal Access Section -->
+<section class="py-5">
+    <div class="container">
+        <h2 class="h1 fw-bold text-center mb-5">Existing Users</h2>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card shadow-sm feature-card h-100 text-center">
+                    <div class="card-body d-flex flex-column">
+                        <div class="feature-icon" style="color: #0d6efd;">
+                            <i class="bi bi-person-circle"></i>
+                        </div>
+                        <h5 class="card-title">Guest Access</h5>
+                        <p class="card-text flex-grow-1 text-muted">Access your invitations, RSVP, and travel details</p>
+                        <a href="/login/guest" class="btn btn-primary mt-auto">Guest Login</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card shadow-sm feature-card h-100 text-center">
+                    <div class="card-body d-flex flex-column">
+                        <div class="feature-icon" style="color: #198754;">
+                            <i class="bi bi-house-door"></i>
+                        </div>
+                        <h5 class="card-title">Host Access</h5>
+                        <p class="card-text flex-grow-1 text-muted">Manage events and coordinate with guests</p>
+                        <a href="/login/host" class="btn btn-success mt-auto">Host Login</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card shadow-sm feature-card h-100 text-center">
+                    <div class="card-body d-flex flex-column">
+                        <div class="feature-icon" style="color: #dc3545;">
+                            <i class="bi bi-shield-lock"></i>
+                        </div>
+                        <h5 class="card-title">Admin Access</h5>
+                        <p class="card-text flex-grow-1 text-muted">System administration and management</p>
+                        <a href="/login/admin" class="btn btn-danger mt-auto">Admin Login</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- Footer -->
+<footer class="bg-dark text-white py-5 mt-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 mb-4 mb-md-0">
+                <h5 class="fw-bold mb-3">
+                    <img src="/icon" alt="WedKnots" style="max-height: 30px; margin-right: 10px;">
+                    WedKnots
+                </h5>
+                <p class="text-muted">Making wedding management simple, elegant, and stress-free.</p>
+            </div>
+            <div class="col-md-6">
+                <h5 class="fw-bold mb-3">Quick Links</h5>
+                <ul class="list-unstyled">
+                    <li><a href="#capabilities" class="text-white text-decoration-none">Capabilities</a></li>
+                    <li><a href="#features" class="text-white text-decoration-none">Features</a></li>
+                    <li><a href="#contact" class="text-white text-decoration-none">Contact</a></li>
+                    <li><a href="/privacy-policy" class="text-white text-decoration-none">Privacy Policy</a></li>
+                </ul>
+            </div>
+        </div>
+        <hr class="bg-secondary">
+        <div class="text-center">
+            <p class="mb-0 text-muted">&copy; 2026 WedKnots. All rights reserved.</p>
+        </div>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Form submission handler
+    document.getElementById('contactForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        // Show loading state
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Sending...';
+
+        // Simulate form submission (in production, this would send to backend)
+        setTimeout(() => {
+            alert('Thank you for your message! We will contact you shortly at ' + document.getElementById('email').value);
+            this.reset();
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }, 1500);
+    });
+</script>
+</body>
+</html>
+

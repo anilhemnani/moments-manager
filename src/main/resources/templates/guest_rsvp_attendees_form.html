@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>RSVP & Attendees</title>
+    <meta charset="UTF-8">
+    <th:block th:replace="~{_bootstrap_head :: head}"></th:block>
+    <style>
+        .attendee-field-group {
+            background-color: #f8f9fa;
+            border-left: 4px solid #0d6efd;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 0.25rem;
+        }
+        .max-attendees-warning {
+            margin-top: 0.5rem;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">WedKnots</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" href="/invitations">My Invitations</a></li>
+                <li class="nav-item"><a class="nav-link" href="/logout">Logout</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0"><i class="bi bi-calendar-check"></i> RSVP & Attendees</h3>
+                </div>
+                <div class="card-body p-5">
+                    <p class="text-muted mb-4">Please confirm your attendance and provide details of who will be attending.</p>
+
+                    <form action="/invitations/rsvp-attendees/save" method="post" id="rsvpAttendeeForm">
+                        <!-- Hidden fields -->
+                        <input type="hidden" name="guestId" th:value="${guest.id}"/>
+                        <input type="hidden" name="eventId" th:value="${eventId}"/>
+
+                        <!-- Guest Info Section -->
+                        <div class="card mb-4 bg-light">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-person"></i> Your Information</h5>
+                            </div>
+                            <div class="card-body">
+                                <dl class="row mb-0">
+                                    <dt class="col-sm-4">Name:</dt>
+                                    <dd class="col-sm-8" th:text="${guest.contactName}">Guest Name</dd>
+
+                                    <dt class="col-sm-4">Family:</dt>
+                                    <dd class="col-sm-8" th:text="${guest.familyName}">Family Name</dd>
+
+                                    <dt class="col-sm-4">Phone:</dt>
+                                    <dd class="col-sm-8" th:text="${guest.contactPhone}">Phone Number</dd>
+                                </dl>
+                            </div>
+                        </div>
+
+                        <!-- Expected Travel Schedule Info -->
+                        <div class="alert alert-info mb-4" role="alert">
+                            <h6 class="alert-heading"><i class="bi bi-calendar-event"></i> Expected Travel Schedule</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-2">
+                                        <strong><i class="bi bi-arrow-down-circle"></i> Arrival</strong><br>
+                                        <span th:text="${guest.expectedArrivalDate ?: event.expectedGuestArrivalDate ?: 'Not set'}">Arrival Date</span>
+                                    </p>
+                                    <p class="mb-0" th:if="${event.preferredTravelAirport}">
+                                        <small><i class="bi bi-airplane"></i> <span th:text="${event.preferredTravelAirport}">Airport</span></small>
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-2">
+                                        <strong><i class="bi bi-arrow-up-circle"></i> Departure</strong><br>
+                                        <span th:text="${guest.expectedDepartureDate ?: event.expectedGuestDepartureDate ?: 'Not set'}">Departure Date</span>
+                                    </p>
+                                    <p class="mb-0" th:if="${event.preferredTravelStation}">
+                                        <small><i class="bi bi-train-front"></i> <span th:text="${event.preferredTravelStation}">Station</span></small>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- RSVP Status Section -->
+                        <div class="card mb-4 bg-light">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-question-circle"></i> Your RSVP Status</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="status" class="form-label"><strong>Will you attend? *</strong></label>
+                                    <select name="status" id="status" class="form-select" required>
+                                        <option value="">-- Select Your Response --</option>
+                                        <option value="ACCEPTED" th:selected="${rsvp.status != null and rsvp.status.name() == 'ACCEPTED'}">
+                                            ✓ Yes, I will attend
+                                        </option>
+                                        <option value="DECLINED" th:selected="${rsvp.status != null and rsvp.status.name() == 'DECLINED'}">
+                                            ✗ No, I cannot attend
+                                        </option>
+                                        <option value="MAYBE" th:selected="${rsvp.status != null and rsvp.status.name() == 'MAYBE'}">
+                                            ? Not sure yet
+                                        </option>
+                                        <option value="PENDING" th:selected="${rsvp.status == null or rsvp.status.name() == 'PENDING'}">
+                                            Pending (Not decided yet)
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Attendees Count Section -->
+                        <div class="card mb-4 bg-light">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-people-fill"></i> Number of Attendees</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="attendeeCount" class="form-label"><strong>How many people will attend? *</strong></label>
+                                    <div class="input-group mb-2">
+                                        <button type="button" class="btn btn-outline-secondary" onclick="decrementAttendeeCount()">−</button>
+                                        <input type="number"
+                                               name="attendeeCount"
+                                               id="attendeeCount"
+                                               class="form-control text-center"
+                                               th:value="${rsvp.attendeeCount ?: 1}"
+                                               min="1"
+                                               th:max="${guest.maxAttendees}"
+                                               required
+                                               onchange="updateAttendeeFields()">
+                                        <button type="button" class="btn btn-outline-secondary" onclick="incrementAttendeeCount()">+</button>
+                                    </div>
+                                    <small class="form-text text-muted d-block mb-2">
+                                        Maximum allowed: <strong th:text="${guest.maxAttendees}">5</strong> attendee(s)
+                                    </small>
+                                    <div class="alert alert-warning max-attendees-warning" id="maxWarning" style="display: none;">
+                                        <i class="bi bi-exclamation-triangle"></i> You've reached the maximum number of attendees allowed.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Attendee Details Section -->
+                        <div class="card mb-4 bg-light">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-person-check"></i> Attendee Details</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted small mb-3">Enter names and ages for each attendee (include yourself)</p>
+
+                                <!-- Attendee Input Fields -->
+                                <div id="attendeeFieldsContainer">
+                                    <!-- Fields will be generated by JavaScript -->
+                                </div>
+
+                                <div class="alert alert-info mt-3">
+                                    <i class="bi bi-info-circle"></i>
+                                    <strong>Note:</strong> The first attendee should be you. Please provide names for all attendees.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-check-circle"></i> Save RSVP & Attendees
+                            </button>
+                            <a href="/invitations" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const maxAttendees = [[${guest.maxAttendees}]];
+
+    function updateAttendeeFields() {
+        const count = parseInt(document.getElementById('attendeeCount').value) || 1;
+        const maxWarning = document.getElementById('maxWarning');
+
+        // Show/hide max warning
+        if (count >= maxAttendees) {
+            maxWarning.style.display = 'block';
+        } else {
+            maxWarning.style.display = 'none';
+        }
+
+        // Validate count
+        if (count < 1) {
+            document.getElementById('attendeeCount').value = 1;
+            return;
+        }
+        if (count > maxAttendees) {
+            document.getElementById('attendeeCount').value = maxAttendees;
+            return;
+        }
+
+        const container = document.getElementById('attendeeFieldsContainer');
+        const currentFields = container.querySelectorAll('.attendee-field-group').length;
+
+        // Add new fields
+        if (count > currentFields) {
+            for (let i = currentFields; i < count; i++) {
+                addAttendeeField(i);
+            }
+        }
+        // Remove excess fields
+        else if (count < currentFields) {
+            const fields = container.querySelectorAll('.attendee-field-group');
+            for (let i = currentFields - 1; i >= count; i--) {
+                fields[i].remove();
+            }
+        }
+    }
+
+    function addAttendeeField(index) {
+        const container = document.getElementById('attendeeFieldsContainer');
+        const fieldGroup = document.createElement('div');
+        fieldGroup.className = 'attendee-field-group';
+        fieldGroup.innerHTML = `
+            <div class="row">
+                <div class="col-md-8 mb-3">
+                    <label for="attendeeName_${index}" class="form-label">
+                        <strong>Attendee ${index + 1} Name</strong>
+                        <span th:if="${index == 0}" class="text-muted small">(You)</span>
+                    </label>
+                    <input type="text"
+                           class="form-control"
+                           id="attendeeName_${index}"
+                           name="attendeeNames"
+                           placeholder="Enter full name"
+                           required>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="attendeeAge_${index}" class="form-label"><strong>Age</strong></label>
+                    <select class="form-select"
+                            id="attendeeAge_${index}"
+                            name="attendeeAges"
+                            required>
+                        <option value="">-- Select --</option>
+                        <option value="Adult">Adult</option>
+                        <option value="Child">Child (6-12)</option>
+                        <option value="Infant">Infant (0-5)</option>
+                    </select>
+                </div>
+            </div>
+        `;
+        container.appendChild(fieldGroup);
+    }
+
+    function incrementAttendeeCount() {
+        const input = document.getElementById('attendeeCount');
+        const count = parseInt(input.value) || 1;
+        if (count < maxAttendees) {
+            input.value = count + 1;
+            updateAttendeeFields();
+        }
+    }
+
+    function decrementAttendeeCount() {
+        const input = document.getElementById('attendeeCount');
+        const count = parseInt(input.value) || 1;
+        if (count > 1) {
+            input.value = count - 1;
+            updateAttendeeFields();
+        }
+    }
+
+    // Initialize attendee fields on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Pre-populate with existing attendees if available
+        const existingAttendees = [[${attendees}]];
+
+        if (existingAttendees && existingAttendees.length > 0) {
+            // Use existing attendee count
+            document.getElementById('attendeeCount').value = existingAttendees.length;
+
+            // Populate fields with existing data
+            const container = document.getElementById('attendeeFieldsContainer');
+            existingAttendees.forEach((attendee, index) => {
+                addAttendeeField(index);
+                // Fill in the data
+                setTimeout(() => {
+                    document.getElementById('attendeeName_' + index).value = attendee.name || '';
+                    document.getElementById('attendeeAge_' + index).value = attendee.ageGroup || '';
+                }, 10);
+            });
+        } else {
+            // Initialize with default count
+            updateAttendeeFields();
+        }
+    });
+</script>
+</body>
+</html>
+

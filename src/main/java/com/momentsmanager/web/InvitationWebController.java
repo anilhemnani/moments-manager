@@ -169,6 +169,7 @@ public class InvitationWebController {
     public String showSendInvitation(@PathVariable Long eventId,
                                       @PathVariable Long invitationId,
                                       @RequestParam(required = false) String side,
+                                      @RequestParam(required = false, defaultValue = "whatsapp") String method,
                                       Model model) {
         Optional<WeddingEvent> eventOpt = weddingEventRepository.findById(eventId);
         Optional<Invitation> invitationOpt = invitationService.getInvitationById(invitationId);
@@ -204,6 +205,8 @@ public class InvitationWebController {
         model.addAttribute("guests", guests);
         model.addAttribute("sentGuestIds", sentGuestIds);
         model.addAttribute("selectedSide", side != null ? side : "ALL");
+        model.addAttribute("method", method);
+        model.addAttribute("externalMethods", new String[]{"Email", "Phone Call", "SMS", "In-person", "Other"});
         return "invitation_send";
     }
 
@@ -212,20 +215,65 @@ public class InvitationWebController {
     public String sendInvitation(@PathVariable Long eventId,
                                   @PathVariable Long invitationId,
                                   @RequestParam List<Long> guestIds,
+                                  @RequestParam(required = false, defaultValue = "whatsapp") String method,
+                                  @RequestParam(required = false) String externalMethod,
                                   RedirectAttributes redirectAttributes) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
 
         try {
-            List<InvitationLog> logs = invitationLogService.sendInvitationToGuests(invitationId, guestIds, username);
+            List<InvitationLog> logs;
 
-            long successCount = logs.stream().filter(log -> log.getDeliveryStatus().equals("SENT")).count();
-            long failedCount = logs.stream().filter(log -> log.getDeliveryStatus().equals("FAILED")).count();
+            if ("external".equals(method)) {
+                // Mark invitations as sent externally
+                if (externalMethod == null || externalMethod.isBlank()) {
+                    redirectAttributes.addFlashAttribute("errorMessage",
+                            "External invitation method is required");
+                    return "redirect:/events/" + eventId + "/invitations/" + invitationId + "/send";
+                }
 
-            redirectAttributes.addFlashAttribute("successMessage",
-                    String.format("Invitation sent to %d guest(s). Failed: %d", successCount, failedCount));
+                logs = invitationLogService.markMultipleInvitationsSentExternally(
+                        invitationId, guestIds, externalMethod, username);
+
+                redirectAttributes.addFlashAttribute("successMessage",
+                        String.format("Marked %d invitation(s) as sent via %s", logs.size(), externalMethod));
+            } else {
+                // Send via WhatsApp (existing behavior)
+                logs = invitationLogService.sendInvitationToGuests(invitationId, guestIds, username);
+
+                long successCount = logs.stream().filter(log -> log.getDeliveryStatus().equals("SENT")).count();
+                long failedCount = logs.stream().filter(log -> log.getDeliveryStatus().equals("FAILED")).count();
+
+                redirectAttributes.addFlashAttribute("successMessage",
+                        String.format("Invitation sent to %d guest(s). Failed: %d", successCount, failedCount));
+            }
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Failed to send invitations: " + e.getMessage());
+        }
+
+        return "redirect:/events/" + eventId + "/invitations/" + invitationId + "/logs";
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'HOST')")
+    @PostMapping("/{invitationId}/send-external")
+    public String sendExternalInvitation(@PathVariable Long eventId,
+                                         @PathVariable Long invitationId,
+                                         @RequestParam Long guestId,
+                                         @RequestParam String externalMethod,
+                                         RedirectAttributes redirectAttributes) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = auth.getName();
+
+        try {
+            if (externalMethod == null || externalMethod.isBlank()) {
+                throw new RuntimeException("External invitation method is required");
+            }
+
+            invitationLogService.markInvitationSentExternally(invitationId, guestId, externalMethod, username);
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Invitation marked as sent via " + externalMethod);
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Failed to mark invitation: " + e.getMessage());
         }
 
         return "redirect:/events/" + eventId + "/invitations/" + invitationId + "/logs";
