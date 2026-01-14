@@ -30,7 +30,7 @@ if %errorLevel% neq 0 (
 REM Configuration
 set "SERVICE_NAME=WedKnots"
 set "DISPLAY_NAME=WedKnots Application Service"
-set "HOSTING_ROOT=C:\hosting\wedknots"
+set "HOSTING_ROOT=C:\hosting\wed-knots"
 set "INSTALL_SCRIPT=%~dp0install-service.ps1"
 
 REM Detect current version from script location
@@ -49,10 +49,16 @@ set "UNINSTALL_FLAG="
 REM Check first argument
 if /i "%~1"=="latest" (
   set "REQUESTED_VERSION=latest"
-) else if /i "%~1"=="/uninstall" (
+)
+if /i "%~1"=="/uninstall" (
   set "UNINSTALL_FLAG=1"
-) else if not "%~1"=="" (
-  set "REQUESTED_VERSION=%~1"
+)
+if not "%~1"=="" (
+  if /i not "%~1"=="latest" (
+    if /i not "%~1"=="/uninstall" (
+      set "REQUESTED_VERSION=%~1"
+    )
+  )
 )
 
 REM Check second argument for uninstall flag
