@@ -4,11 +4,14 @@ setlocal enabledelayedexpansion
 REM ==========================================
 REM WedKnots - Install/Reinstall Windows Service
 REM ==========================================
-REM Creates Windows service that automatically runs the latest
+REM Creates Windows service that automatically runs a specific
 REM version of WedKnots installed in C:\hosting\wedknots
+REM If no version specified, uses the latest version
 REM
-REM Usage: install-service.bat
-REM        install-service.bat /uninstall  (remove service only)
+REM Usage: install-service.bat                    (use latest version)
+REM        install-service.bat 1.0.3              (use specific version)
+REM        install-service.bat /uninstall         (remove service only)
+REM        install-service.bat 1.0.3 /uninstall   (remove service only)
 
 REM Check for administrator privileges
 net session >nul 2>&1
@@ -29,6 +32,16 @@ set "SERVICE_NAME=WedKnots"
 set "DISPLAY_NAME=WedKnots Application Service"
 set "HOSTING_ROOT=C:\hosting\wedknots"
 set "INSTALL_SCRIPT=%~dp0install-service.ps1"
+set "REQUESTED_VERSION=%~1"
+
+REM Check for /uninstall flag in any argument
+set "UNINSTALL_FLAG="
+if /i "%~1"=="/uninstall" (
+  set "UNINSTALL_FLAG=1"
+  set "REQUESTED_VERSION="
+) else if /i "%~2"=="/uninstall" (
+  set "UNINSTALL_FLAG=1"
+)
 
 REM Check hosting folder exists
 if not exist "%HOSTING_ROOT%" (
@@ -38,7 +51,7 @@ if not exist "%HOSTING_ROOT%" (
 )
 
 REM Handle uninstall parameter
-if /i "%1"=="/uninstall" (
+if defined UNINSTALL_FLAG (
     goto uninstallService
 )
 
@@ -53,10 +66,15 @@ echo ==========================================
 echo Service Name: %SERVICE_NAME%
 echo Display Name: %DISPLAY_NAME%
 echo Hosting Root: %HOSTING_ROOT%
+if defined REQUESTED_VERSION (
+  echo Requested Version: %REQUESTED_VERSION%
+) else (
+  echo Version: Latest (will be auto-detected^)
+)
 echo.
 
 REM Create the PowerShell installation script
-call :createPowerShellScript
+call :createPowerShellScript "%REQUESTED_VERSION%"
 
 REM Run PowerShell script to install service
 echo Installing service...
@@ -115,31 +133,44 @@ REM ==========================================
 REM Create PowerShell Installation Script
 REM ==========================================
 :createPowerShellScript
-
+set "REQUESTED_VERSION=%~1"
 set "PS_SCRIPT=%INSTALL_SCRIPT%"
 
 (
     echo # WedKnots Windows Service Installation Script
     echo # This script installs/reinstalls the WedKnots service
-    echo # It finds the latest version in the hosting directory
+    echo # It uses the specified version or finds the latest version
     echo.
     echo $ServiceName = "%SERVICE_NAME%"
     echo $DisplayName = "%DISPLAY_NAME%"
     echo $HostingRoot = "%HOSTING_ROOT%"
+    echo $RequestedVersion = "%REQUESTED_VERSION%"
     echo.
-    echo # Find latest version folder
-    echo $VersionFolder = Get-ChildItem -Path $HostingRoot -Directory -Filter "wed-knots-*" ^| Sort-Object Name -Descending ^| Select-Object -First 1
-    echo.
-    echo if ($null -eq $VersionFolder) {
-    echo     Write-Error "No wed-knots version folders found in $HostingRoot"
-    echo     exit 1
+    echo # Find version folder
+    echo if ($RequestedVersion -and $RequestedVersion -ne "") {
+    echo     Write-Host "Looking for specified version: $RequestedVersion" -ForegroundColor Cyan
+    echo     $VersionFolder = Get-ChildItem -Path $HostingRoot -Directory -Filter "wed-knots-$RequestedVersion" ^| Select-Object -First 1
+    echo     if ($null -eq $VersionFolder) {
+    echo         Write-Error "Version not found: wed-knots-$RequestedVersion"
+    echo         Write-Host ""
+    echo         Write-Host "Available versions:" -ForegroundColor Yellow
+    echo         Get-ChildItem -Path $HostingRoot -Directory -Filter "wed-knots-*" ^| ForEach-Object { Write-Host "  - $($_.Name)" }
+    echo         exit 1
+    echo     }
+    echo } else {
+    echo     Write-Host "Auto-detecting latest version..." -ForegroundColor Cyan
+    echo     $VersionFolder = Get-ChildItem -Path $HostingRoot -Directory -Filter "wed-knots-*" ^| Sort-Object Name -Descending ^| Select-Object -First 1
+    echo     if ($null -eq $VersionFolder) {
+    echo         Write-Error "No wed-knots version folders found in $HostingRoot"
+    echo         exit 1
+    echo     }
     echo }
     echo.
     echo $AppPath = $VersionFolder.FullName
     echo $BinPath = Join-Path $AppPath "bin\start.bat"
     echo $ConfigPath = Join-Path $AppPath "config"
     echo.
-    echo Write-Host "Found version: $($VersionFolder.Name)" -ForegroundColor Green
+    echo Write-Host "Using version: $($VersionFolder.Name)" -ForegroundColor Green
     echo Write-Host "Application path: $AppPath" -ForegroundColor Cyan
     echo Write-Host "Start script: $BinPath" -ForegroundColor Cyan
     echo.
@@ -218,6 +249,7 @@ set "PS_SCRIPT=%INSTALL_SCRIPT%"
     echo Write-Host "  Display Name: $($svc.DisplayName)"
     echo Write-Host "  Status: $($svc.Status)"
     echo Write-Host "  Startup Type: $($svc.StartupType)"
+    echo Write-Host "  Version: $($VersionFolder.Name)"
     echo Write-Host ""
     echo exit 0
 ) > "%PS_SCRIPT%"

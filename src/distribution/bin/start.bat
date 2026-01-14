@@ -1,38 +1,6 @@
 @echo off
 setlocal enabledelayedexpansion
 
-REM Check for administrator privileges and elevate if needed
-REM Only check if not already elevated (ELEVATED env var set by elevated instance)
-if not defined ELEVATED (
-    net session >nul 2>&1
-    if %errorLevel% neq 0 (
-        echo.
-        echo ==========================================
-        echo Administrative Privileges Required
-        echo ==========================================
-        echo This script requires administrator privileges.
-        echo Please approve the elevation request...
-        echo.
-
-        REM Set flag to indicate we're attempting elevation
-        set "ELEVATED=1"
-        REM Re-run script as administrator
-        powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process cmd.exe -ArgumentList '/c \"cd /d \"%CD%\" && set ELEVATED=1 && call \"%~f0\" %*' -Verb RunAs" 2>nul
-
-        if !errorLevel! neq 0 (
-            echo.
-            echo ERROR: Failed to elevate privileges!
-            echo Please run this script as administrator.
-            echo.
-            echo To run as administrator:
-            echo   1. Right-click on start.bat
-            echo   2. Select "Run as administrator"
-            echo.
-            pause
-        )
-        exit /b !errorLevel!
-    )
-)
 
 REM ==========================================
 REM WedKnots - Start Script (Windows)
@@ -51,23 +19,6 @@ cd /d "%APP_ROOT%"
 REM Resolve parent directory
 for %%I in ("%APP_ROOT%..") do set "PARENT_DIR=%%~fI"
 
-REM --- Create wrapper bat file in parent folder ---
-set "WRAPPER_BAT=%PARENT_DIR%\WedKnots.bat"
-(
-  echo @echo off
-  echo setlocal enabledelayedexpansion
-  echo.
-  echo REM Auto-generated wrapper for WedKnots service
-  echo REM This file invokes the main start.bat script
-  echo.
-  echo REM Set working directory
-  echo cd /d "%APP_ROOT%"
-  echo.
-  echo REM Call the actual start script with service parameter
-  echo call "%APP_ROOT%\bin\start.bat" service
-  echo endlocal
-) > "%WRAPPER_BAT%"
-echo Created/Updated wrapper: "%WRAPPER_BAT%"
 
 REM --- Load parent config.env if present ---
 set "PARENT_ENV=%APP_ROOT%\..\config.env"
