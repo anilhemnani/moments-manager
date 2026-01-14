@@ -1,6 +1,14 @@
 @echo off
 setlocal enabledelayedexpansion
 
+REM Check for administrator privileges and elevate if needed
+net session >nul 2>&1
+if %errorLevel% neq 0 (
+    echo Requesting administrator privileges...
+    powershell -Command "Start-Process -FilePath '%~f0' -ArgumentList '%*' -Verb RunAs"
+    exit /b
+)
+
 REM ==========================================
 REM WedKnots Release and Deployment Script
 REM ==========================================
