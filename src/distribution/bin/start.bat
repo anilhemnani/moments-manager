@@ -123,23 +123,8 @@ if not defined JAR_FILE (
 echo Starting application with JAR: "%JAR_FILE%"
 echo Logging to: %LOG_FILE%
 
-REM Check if running as service (parameter passed)
-if "%1"=="app" (
-  REM Running manually in foreground - blocking mode
-  echo Starting in foreground mode (console)...
-  java -Xms512m -Xmx1024m ^
-    -Dspring.profiles.active=%SPRING_PROFILES_ACTIVE% ^
-    -Dspring.datasource.url="%DATABASE_URL%" ^
-    -Dspring.datasource.username="%DATABASE_USERNAME%" ^
-    -Dspring.datasource.password="%DATABASE_PASSWORD%" ^
-    -Dspring.datasource.driver-class-name="org.postgresql.Driver" ^
-    -Dserver.port=%PORT% ^
-    -Dlogging.file.name="%LOG_FILE%" ^
-    -Djasypt.encryptor.password="%JASYPT_ENCRYPTOR_PASSWORD%" ^
-    -Dwhatsapp.webhook.verify-token="%WHATSAPP_VERIFY_TOKEN%" ^
-    -Dwhatsapp.webhook.app-secret="%WHATSAPP_APP_SECRET%" ^
-    -jar "%JAR_FILE%"
-) else if "%1"=="service" (
+REM Check if running as service or app (default to app if no parameter)
+if "%1"=="service" (
   REM Running as service - start in background and monitor
   echo Starting in background mode (service)...
   start "WedKnots" /B java -Xms512m -Xmx1024m ^
@@ -169,8 +154,8 @@ if "%1"=="app" (
 
   echo Java process has terminated. Exiting monitor.
 ) else (
-  REM Default behavior - run in foreground
-  echo No mode specified. Starting in foreground mode...
+  REM Default behavior and explicit app mode - run in foreground
+  echo Starting in foreground mode (console - app mode)...
   java -Xms512m -Xmx1024m ^
     -Dspring.profiles.active=%SPRING_PROFILES_ACTIVE% ^
     -Dspring.datasource.url="%DATABASE_URL%" ^
