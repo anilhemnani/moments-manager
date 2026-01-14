@@ -7,11 +7,30 @@ REM ==========================================
 REM - Loads parent config.env (one level above install dir)
 REM - Then loads config\config.env to override
 REM - Stops existing app and starts new version
+REM - Creates wrapper bat in parent folder
+REM - Deletes and recreates WedKnots service
 
 REM Resolve install root (bin is under install root)
 set "BIN_DIR=%~dp0"
 for %%I in ("%BIN_DIR%..") do set "APP_ROOT=%%~fI"
 cd /d "%APP_ROOT%"
+
+REM Resolve parent directory
+for %%I in ("%APP_ROOT%..") do set "PARENT_DIR=%%~fI"
+
+REM --- Create wrapper bat file in parent folder ---
+set "WRAPPER_BAT=%PARENT_DIR%\WedKnots.bat"
+(
+  echo @echo off
+  echo setlocal enabledelayedexpansion
+  echo.
+  echo REM Auto-generated wrapper for WedKnots service
+  echo REM This file invokes the main start.bat script
+  echo.
+  echo call "%APP_ROOT%\bin\start.bat"
+  echo endlocal
+) > "%WRAPPER_BAT%"
+echo Created/Updated wrapper: "%WRAPPER_BAT%"
 
 REM --- Load parent config.env if present ---
 set "PARENT_ENV=%APP_ROOT%\..\config.env"
@@ -40,6 +59,15 @@ if not defined SPRING_PROFILES_ACTIVE set "SPRING_PROFILES_ACTIVE=prod"
 if not defined PORT set "PORT=8080"
 if not defined LOG_FILE set "LOG_FILE=logs/wedknots.log"
 
+REM --- Delete and recreate WedKnots service ---
+echo Deleting and recreating WedKnots service...
+powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+  "try { Stop-Service -Name 'WedKnots' -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 2 } catch {} ; ^
+   try { Remove-Service -Name 'WedKnots' -Force -ErrorAction SilentlyContinue } catch {} ; ^
+   New-Service -Name 'WedKnots' -BinaryPathName 'cmd.exe /c \"%WRAPPER_BAT%\"' -DisplayName 'WedKnots Service' -StartupType Automatic -ErrorAction SilentlyContinue ; ^
+   Start-Service -Name 'WedKnots' -ErrorAction SilentlyContinue"
+echo Service recreation completed.
+
 REM --- Stop existing Java process for this app ---
 echo Checking for existing application...
 for /f "tokens=2 delims=," %%P in ('tasklist /fi "IMAGENAME eq java.exe" /fo csv 2^>nul') do (
@@ -63,7 +91,6 @@ if not defined JAR_FILE (
 )
 
 echo Starting application with JAR: "%JAR_FILE%"
-
 echo Logging to: %LOG_FILE%
 
 java -Xms512m -Xmx1024m ^
@@ -80,4 +107,3 @@ java -Xms512m -Xmx1024m ^
   -jar "%JAR_FILE%"
 
 endlocal
-
