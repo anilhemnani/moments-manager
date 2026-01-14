@@ -13,15 +13,35 @@ REM ==========================================
 REM WedKnots - Stop Script (Windows)
 REM ==========================================
 
-REM Try graceful stop by killing java.exe
-for /f "tokens=2 delims=," %%P in ('tasklist /fi "IMAGENAME eq java.exe" /fo csv 2^>nul') do (
-  echo Stopping existing java.exe...
-  taskkill /F /IM java.exe >nul 2>&1
-  timeout /t 2 >nul
-  goto :done
+REM Try to stop the Windows service first
+echo Attempting to stop WedKnots service...
+sc query WedKnots >nul 2>&1
+if %errorLevel% equ 0 (
+  sc stop WedKnots >nul 2>&1
+  if %errorLevel% equ 0 (
+    echo Service stopped successfully.
+    timeout /t 3 >nul
+  ) else (
+    echo Service stop command issued, waiting...
+    timeout /t 3 >nul
+  )
+) else (
+  echo WedKnots service not found.
 )
 
-echo No running application found.
+REM Force kill any remaining java.exe processes
+echo Checking for running Java processes...
+tasklist /fi "IMAGENAME eq java.exe" 2>nul | find /i "java.exe" >nul
+if %errorLevel% equ 0 (
+  echo Stopping java.exe processes...
+  taskkill /F /IM java.exe >nul 2>&1
+  timeout /t 2 >nul
+  echo Java processes terminated.
+) else (
+  echo No Java processes found.
+)
+
+echo Application stopped.
 :done
 endlocal
 

@@ -35,7 +35,11 @@ set "WRAPPER_BAT=%PARENT_DIR%\WedKnots.bat"
   echo REM Auto-generated wrapper for WedKnots service
   echo REM This file invokes the main start.bat script
   echo.
-  echo call "%APP_ROOT%\bin\start.bat"
+  echo REM Set working directory
+  echo cd /d "%APP_ROOT%"
+  echo.
+  echo REM Call the actual start script
+  echo call "%APP_ROOT%\bin\start.bat" service
   echo endlocal
 ) > "%WRAPPER_BAT%"
 echo Created/Updated wrapper: "%WRAPPER_BAT%"
@@ -69,9 +73,31 @@ if not defined LOG_FILE set "LOG_FILE=logs/wedknots.log"
 
 REM --- Delete and recreate WedKnots service ---
 echo Deleting and recreating WedKnots service...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "try { Stop-Service -Name 'WedKnots' -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 2 } catch {} ; try { Remove-Service -Name 'WedKnots' -Force -ErrorAction SilentlyContinue } catch {} ; New-Service -Name 'WedKnots' -BinaryPathName 'cmd.exe /c \"%WRAPPER_BAT%\"' -DisplayName 'WedKnots Service' -StartupType Automatic -ErrorAction SilentlyContinue ; Start-Service -Name 'WedKnots' -ErrorAction SilentlyContinue"
-echo Service recreation completed.
+REM First stop and remove old service
+sc stop WedKnots >nul 2>&1
+timeout /t 2 >nul
+sc delete WedKnots >nul 2>&1
+timeout /t 1 >nul
 
+REM Create service using sc with proper parameters
+sc create WedKnots binPath= "cmd.exe /c \"\"%WRAPPER_BAT%\"\"" start= auto DisplayName= "WedKnots Service" >nul 2>&1
+if %errorLevel% equ 0 (
+  echo Service created successfully.
+  sc description WedKnots "WedKnots Spring Boot Application Service"
+  sc start WedKnots >nul 2>&1
+  if %errorLevel% equ 0 (
+    echo Service started successfully.
+  ) else (
+    echo Warning: Service created but failed to start. Starting manually...
+    goto startManually
+  )
+) else (
+  echo Warning: Service creation failed. Starting application manually...
+  goto startManually
+)
+goto end
+
+:startManually
 REM --- Stop existing Java process for this app ---
 echo Checking for existing application...
 for /f "tokens=2 delims=," %%P in ('tasklist /fi "IMAGENAME eq java.exe" /fo csv 2^>nul') do (
@@ -97,17 +123,50 @@ if not defined JAR_FILE (
 echo Starting application with JAR: "%JAR_FILE%"
 echo Logging to: %LOG_FILE%
 
-java -Xms512m -Xmx1024m ^
-  -Dspring.profiles.active=%SPRING_PROFILES_ACTIVE% ^
-  -Dspring.datasource.url="%DATABASE_URL%" ^
-  -Dspring.datasource.username="%DATABASE_USERNAME%" ^
-  -Dspring.datasource.password="%DATABASE_PASSWORD%" ^
-  -Dspring.datasource.driver-class-name="org.postgresql.Driver" ^
-  -Dserver.port=%PORT% ^
-  -Dlogging.file.name="%LOG_FILE%" ^
-  -Djasypt.encryptor.password="%JASYPT_ENCRYPTOR_PASSWORD%" ^
-  -Dwhatsapp.webhook.verify-token="%WHATSAPP_VERIFY_TOKEN%" ^
-  -Dwhatsapp.webhook.app-secret="%WHATSAPP_APP_SECRET%" ^
-  -jar "%JAR_FILE%"
+REM Check if running as service (parameter passed)
+if "%1"=="service" (
+  REM Running as service - start Java in foreground and monitor
+  java -Xms512m -Xmx1024m ^
+    -Dspring.profiles.active=%SPRING_PROFILES_ACTIVE% ^
+    -Dspring.datasource.url="%DATABASE_URL%" ^
+    -Dspring.datasource.username="%DATABASE_USERNAME%" ^
+    -Dspring.datasource.password="%DATABASE_PASSWORD%" ^
+    -Dspring.datasource.driver-class-name="org.postgresql.Driver" ^
+    -Dserver.port=%PORT% ^
+    -Dlogging.file.name="%LOG_FILE%" ^
+    -Djasypt.encryptor.password="%JASYPT_ENCRYPTOR_PASSWORD%" ^
+    -Dwhatsapp.webhook.verify-token="%WHATSAPP_VERIFY_TOKEN%" ^
+    -Dwhatsapp.webhook.app-secret="%WHATSAPP_APP_SECRET%" ^
+    -jar "%JAR_FILE%"
+) else (
+  REM Running manually - start in background and monitor
+  start "WedKnots" java -Xms512m -Xmx1024m ^
+    -Dspring.profiles.active=%SPRING_PROFILES_ACTIVE% ^
+    -Dspring.datasource.url="%DATABASE_URL%" ^
+    -Dspring.datasource.username="%DATABASE_USERNAME%" ^
+    -Dspring.datasource.password="%DATABASE_PASSWORD%" ^
+    -Dspring.datasource.driver-class-name="org.postgresql.Driver" ^
+    -Dserver.port=%PORT% ^
+    -Dlogging.file.name="%LOG_FILE%" ^
+    -Djasypt.encryptor.password="%JASYPT_ENCRYPTOR_PASSWORD%" ^
+    -Dwhatsapp.webhook.verify-token="%WHATSAPP_VERIFY_TOKEN%" ^
+    -Dwhatsapp.webhook.app-secret="%WHATSAPP_APP_SECRET%" ^
+    -jar "%JAR_FILE%"
 
+  REM Wait for process to start
+  timeout /t 3 >nul
+
+  REM Monitor the Java process
+  echo Monitoring Java process...
+  :monitor_loop
+  tasklist /fi "IMAGENAME eq java.exe" 2>nul | find /i "java.exe" >nul
+  if %errorLevel% equ 0 (
+    timeout /t 10 >nul
+    goto monitor_loop
+  )
+
+  echo Java process has terminated. Exiting monitor.
+)
+
+:end
 endlocal
