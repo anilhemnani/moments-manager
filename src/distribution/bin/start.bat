@@ -2,16 +2,36 @@
 setlocal enabledelayedexpansion
 
 REM Check for administrator privileges and elevate if needed
-net session >nul 2>&1
-if %errorLevel% neq 0 (
-    echo ERROR: This script requires administrator privileges.
-    echo Attempting to elevate...
-    powershell -Command "Start-Process -FilePath '%~f0' -Verb RunAs" 2>nul
+REM Only check if not already elevated (ELEVATED env var set by elevated instance)
+if not defined ELEVATED (
+    net session >nul 2>&1
     if %errorLevel% neq 0 (
-        echo ERROR: Failed to elevate privileges. Please run this script as administrator.
-        pause
+        echo.
+        echo ==========================================
+        echo Administrative Privileges Required
+        echo ==========================================
+        echo This script requires administrator privileges.
+        echo Please approve the elevation request...
+        echo.
+
+        REM Set flag to indicate we're attempting elevation
+        set "ELEVATED=1"
+        REM Re-run script as administrator
+        powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process cmd.exe -ArgumentList '/c \"cd /d \"%CD%\" && set ELEVATED=1 && call \"%~f0\" %*' -Verb RunAs" 2>nul
+
+        if !errorLevel! neq 0 (
+            echo.
+            echo ERROR: Failed to elevate privileges!
+            echo Please run this script as administrator.
+            echo.
+            echo To run as administrator:
+            echo   1. Right-click on start.bat
+            echo   2. Select "Run as administrator"
+            echo.
+            pause
+        )
+        exit /b !errorLevel!
     )
-    exit /b
 )
 
 REM ==========================================
