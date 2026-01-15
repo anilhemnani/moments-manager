@@ -42,6 +42,13 @@ for %%I in ("%CURRENT_VERSION_PATH%") do set "CURRENT_VERSION_NAME=%%~nxI"
 REM Extract version number from folder name (wed-knots-1.0.3 -> 1.0.3)
 set "CURRENT_VERSION=%CURRENT_VERSION_NAME:wed-knots-=%"
 
+REM If running from source (distribution folder), default to latest
+if "%CURRENT_VERSION_NAME%"=="distribution" (
+  set "CURRENT_VERSION=latest"
+  echo Note: Running from source folder, defaulting to latest version
+  echo.
+)
+
 REM Parse command line arguments
 set "REQUESTED_VERSION=%CURRENT_VERSION%"
 set "UNINSTALL_FLAG="
@@ -167,39 +174,44 @@ set "PS_SCRIPT=%INSTALL_SCRIPT%"
     echo $RequestedVersion = "%REQUESTED_VERSION%"
     echo.
     echo # Find version folder
-    echo if ($RequestedVersion -eq "latest") {
+    echo if ^($RequestedVersion -eq "latest"^) {
     echo     Write-Host "Auto-detecting latest version..." -ForegroundColor Cyan
     echo     $VersionFolder = Get-ChildItem -Path $HostingRoot -Directory -Filter "wed-knots-*" ^| Sort-Object Name -Descending ^| Select-Object -First 1
-    echo     if ($null -eq $VersionFolder) {
+    echo     if ^($null -eq $VersionFolder^) {
     echo         Write-Error "No wed-knots version folders found in $HostingRoot"
     echo         exit 1
     echo     }
-    echo } else if ($RequestedVersion -and $RequestedVersion -ne "") {
+    echo }
+    echo if ^($RequestedVersion -ne "latest" -and $RequestedVersion -and $RequestedVersion -ne ""^) {
     echo     Write-Host "Looking for version: $RequestedVersion" -ForegroundColor Cyan
     echo     $VersionFolder = Get-ChildItem -Path $HostingRoot -Directory -Filter "wed-knots-$RequestedVersion" ^| Select-Object -First 1
-    echo     if ($null -eq $VersionFolder) {
+    echo     if ^($null -eq $VersionFolder^) {
     echo         Write-Error "Version not found: wed-knots-$RequestedVersion"
     echo         Write-Host ""
     echo         Write-Host "Available versions:" -ForegroundColor Yellow
     echo         Get-ChildItem -Path $HostingRoot -Directory -Filter "wed-knots-*" ^| ForEach-Object { Write-Host "  - $($_.Name)" }
     echo         exit 1
     echo     }
-    echo } else {
-    echo     Write-Error "No version specified"
-    echo     exit 1
     echo }
     echo.
     echo $AppPath = $VersionFolder.FullName
-    echo $BinPath = Join-Path $AppPath "bin\start.bat"
-    echo $ConfigPath = Join-Path $AppPath "config"
+    echo $BinPath = Join-Path -Path $AppPath -ChildPath "bin" ^| Join-Path -ChildPath "start.bat"
+    echo $ConfigPath = Join-Path -Path $AppPath -ChildPath "config"
     echo.
     echo Write-Host "Using version: $($VersionFolder.Name)" -ForegroundColor Green
     echo Write-Host "Application path: $AppPath" -ForegroundColor Cyan
     echo Write-Host "Start script: $BinPath" -ForegroundColor Cyan
     echo.
     echo # Verify start.bat exists
-    echo if (!(Test-Path $BinPath)) {
+    echo if ^(-not ^(Test-Path -Path $BinPath^)^) {
     echo     Write-Error "Start script not found: $BinPath"
+    echo     Write-Host "Checking if bin folder exists..."
+    echo     $BinDir = Join-Path -Path $AppPath -ChildPath "bin"
+    echo     Write-Host "Bin directory: $BinDir - Exists: $(Test-Path $BinDir)"
+    echo     if ^(Test-Path $BinDir^) {
+    echo         Write-Host "Contents of bin directory:"
+    echo         Get-ChildItem -Path $BinDir ^| ForEach-Object { Write-Host "  - $($_.Name)" }
+    echo     }
     echo     exit 1
     echo }
     echo.
@@ -207,7 +219,7 @@ set "PS_SCRIPT=%INSTALL_SCRIPT%"
     echo Write-Host "Stopping existing service..." -ForegroundColor Yellow
     echo try {
     echo     $service = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
-    echo     if ($service) {
+    echo     if ^($service^) {
     echo         Stop-Service -Name $ServiceName -Force -ErrorAction SilentlyContinue
     echo         Start-Sleep -Seconds 2
     echo     }
@@ -219,25 +231,55 @@ set "PS_SCRIPT=%INSTALL_SCRIPT%"
     echo Write-Host "Removing old service..." -ForegroundColor Yellow
     echo try {
     echo     $service = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
-    echo     if ($service) {
-    echo         Remove-Service -Name $ServiceName -Force -ErrorAction SilentlyContinue
-    echo         Start-Sleep -Seconds 1
-    echo         Write-Host "Old service removed." -ForegroundColor Green
+    echo     if ^($service^) {
+    echo         # Use sc.exe to delete service for better compatibility
+    echo         $result = sc.exe delete $ServiceName
+    echo         Start-Sleep -Seconds 2
+    echo         # Verify service was deleted
+    echo         $checkService = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
+    echo         if ^($null -eq $checkService^) {
+    echo             Write-Host "Old service removed." -ForegroundColor Green
+    echo         } else {
+    echo             Write-Warning "Service may still exist. Will try to create anyway."
+    echo         }
     echo     }
     echo } catch {
-    echo     Write-Host "Could not remove old service, continuing..."
+    echo     Write-Host "No existing service found or could not be removed."
     echo }
     echo.
     echo # Create new service
     echo Write-Host "Creating new service..." -ForegroundColor Yellow
-    echo $ServicePath = "`"cmd.exe /c `""`"$BinPath`""`" service`""
+    echo # Double-check service doesn't exist
+    echo $existingService = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
+    echo if ^($existingService^) {
+    echo     Write-Warning "Service still exists after removal attempt. Forcing deletion..."
+    echo     sc.exe delete $ServiceName ^| Out-Null
+    echo     Start-Sleep -Seconds 3
+    echo     $existingService = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
+    echo     if ^($existingService^) {
+    echo         Write-Error "Cannot remove existing service. Please restart computer and try again."
+    echo         exit 1
+    echo     }
+    echo }
+    echo # Build service path - use quotes properly for cmd.exe
+    echo $ServicePath = "```"$BinPath```" service"
+    echo Write-Host "Service command: $ServicePath" -ForegroundColor Cyan
+    echo.
+    echo # Test if the start.bat can be executed before creating service
+    echo Write-Host "Testing start.bat execution..." -ForegroundColor Yellow
+    echo if ^(Test-Path $BinPath^) {
+    echo     Write-Host "start.bat exists and is accessible" -ForegroundColor Green
+    echo } else {
+    echo     Write-Error "Cannot access start.bat at: $BinPath"
+    echo     exit 1
+    echo }
     echo.
     echo try {
-    echo     New-Service -Name $ServiceName ^`
-    echo                 -BinaryPathName $ServicePath ^`
-    echo                 -DisplayName $DisplayName ^`
-    echo                 -StartupType Automatic ^`
-    echo                 -Description "WedKnots Spring Boot Application Service" ^`
+    echo     New-Service -Name $ServiceName `
+    echo                 -BinaryPathName $ServicePath `
+    echo                 -DisplayName $DisplayName `
+    echo                 -StartupType Manual `
+    echo                 -Description "WedKnots Spring Boot Application Service" `
     echo                 -ErrorAction Stop ^| Out-Null
     echo     Write-Host "Service created successfully." -ForegroundColor Green
     echo } catch {
@@ -249,32 +291,52 @@ set "PS_SCRIPT=%INSTALL_SCRIPT%"
     echo Write-Host "Starting service..." -ForegroundColor Yellow
     echo try {
     echo     Start-Service -Name $ServiceName -ErrorAction Stop
-    echo     Start-Sleep -Seconds 3
+    echo     Start-Sleep -Seconds 5
     echo     Write-Host "Service started successfully." -ForegroundColor Green
     echo } catch {
-    echo     Write-Error "Failed to start service: $_"
-    echo     exit 1
+    echo     Write-Warning "Failed to start service: $_"
+    echo     Write-Host ""
+    echo     Write-Host "Service was created but failed to start." -ForegroundColor Yellow
+    echo     Write-Host "This may be due to:"
+    echo     Write-Host "  1. Application configuration issues"
+    echo     Write-Host "  2. Missing dependencies"
+    echo     Write-Host "  3. Port already in use"
+    echo     Write-Host "  4. Database connection issues"
+    echo     Write-Host ""
+    echo     Write-Host "To debug:"
+    echo     Write-Host "  1. Try running: $BinPath"
+    echo     Write-Host "  2. Check application logs"
+    echo     Write-Host "  3. Check Windows Event Viewer"
+    echo     Write-Host ""
+    echo     Write-Host "Service has been created. You can start it manually after fixing issues."
+    echo     Write-Host "To start manually: sc start $ServiceName"
+    echo     # Don't exit with error - service was created successfully
     echo }
     echo.
-    echo # Verify service is running
-    echo Write-Host "Verifying service status..." -ForegroundColor Yellow
-    echo $svc = Get-Service -Name $ServiceName
-    echo if ($svc.Status -eq "Running") {
-    echo     Write-Host "Service is running!" -ForegroundColor Green
+    echo # Verify service status
+    echo Write-Host "Checking service status..." -ForegroundColor Yellow
+    echo $svc = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
+    echo if ^($svc^) {
+    echo     Write-Host ""
+    echo     Write-Host "Service Information:" -ForegroundColor Cyan
+    echo     Write-Host "  Name: $($svc.Name)"
+    echo     Write-Host "  Display Name: $($svc.DisplayName)"
+    echo     Write-Host "  Status: $($svc.Status)"
+    echo     Write-Host "  Startup Type: $($svc.StartType)"
+    echo     Write-Host "  Version: $($VersionFolder.Name)"
+    echo     Write-Host ""
+    echo     if ^($svc.Status -eq "Running"^) {
+    echo         Write-Host "Service is running successfully!" -ForegroundColor Green
+    echo         exit 0
+    echo     } else {
+    echo         Write-Warning "Service exists but is not running. Status: $($svc.Status)"
+    echo         Write-Host "You may need to check logs and start the service manually."
+    echo         exit 0
+    echo     }
     echo } else {
-    echo     Write-Warning "Service is not running. Status: $($svc.Status)"
+    echo     Write-Error "Service was not created properly"
     echo     exit 1
     echo }
-    echo.
-    echo Write-Host ""
-    echo Write-Host "Service Information:" -ForegroundColor Cyan
-    echo Write-Host "  Name: $($svc.Name)"
-    echo Write-Host "  Display Name: $($svc.DisplayName)"
-    echo Write-Host "  Status: $($svc.Status)"
-    echo Write-Host "  Startup Type: $($svc.StartupType)"
-    echo Write-Host "  Version: $($VersionFolder.Name)"
-    echo Write-Host ""
-    echo exit 0
 ) > "%PS_SCRIPT%"
 
 exit /b 0

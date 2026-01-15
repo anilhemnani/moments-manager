@@ -69,8 +69,8 @@ logging:
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 whatsapp:
   webhook:
-    verify-token: ENC(${WHATSAPP_VERIFY_TOKEN:})
-    app-secret: ENC(${WHATSAPP_APP_SECRET:})
+    verify-token: ${WHATSAPP_VERIFY_TOKEN:}
+    app-secret: ${WHATSAPP_APP_SECRET:}
     endpoint-path: "/api/whatsapp/webhook"
 
 # Jasypt Configuration

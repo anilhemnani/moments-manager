@@ -1,8 +1,9 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.wedknots</groupId>
     <artifactId>wed-knots</artifactId>
-    <version>1.0.10-SNAPSHOT</version>
+    <version>1.0.10</version>
     <packaging>jar</packaging>
     <name>wed-knots</name>
     <description>Wedding Management System - Java Spring Boot Version</description>
@@ -12,8 +13,8 @@
         <connection>scm:git:https://github.com/anilhemnani/wed-knots.git</connection>
         <developerConnection>scm:git:https://github.com/anilhemnani/wed-knots.git</developerConnection>
         <url>https://github.com/anilhemnani/wed-knots</url>
-      <tag>HEAD</tag>
-  </scm>
+        <tag>HEAD</tag>
+    </scm>
 
     <!-- Distribution Management for Maven Release -->
     <distributionManagement>
@@ -147,13 +148,11 @@
         <dependency>
             <groupId>com.github.ulisesbocchio</groupId>
             <artifactId>jasypt-spring-boot-starter</artifactId>
-            <version>3.0.5</version>
+            <version>4.0.3</version>
         </dependency>
-        <!-- PostgreSQL driver -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <scope>runtime</scope>
         </dependency>
     </dependencies>
 
@@ -234,33 +233,37 @@
                         <configuration>
                             <target>
                                 <!-- Create standard folders under dist-staging -->
-                                <mkdir dir="${project.build.directory}/dist-staging/app" />
-                                <mkdir dir="${project.build.directory}/dist-staging/bin" />
-                                <mkdir dir="${project.build.directory}/dist-staging/config" />
-                                <mkdir dir="${project.build.directory}/dist-staging/logs" />
+                                <mkdir dir="${project.build.directory}/dist-staging/app"/>
+                                <mkdir dir="${project.build.directory}/dist-staging/bin"/>
+                                <mkdir dir="${project.build.directory}/dist-staging/config"/>
+                                <mkdir dir="${project.build.directory}/dist-staging/logs"/>
 
                                 <!-- Move scripts and readme to bin/root as needed -->
                                 <copy todir="${project.build.directory}/dist-staging/bin">
-                                    <fileset dir="src/distribution/bin" includes="**/*" />
+                                    <fileset dir="src/distribution/bin" includes="**/*"/>
                                 </copy>
-                                <copy file="src/distribution/README.md" todir="${project.build.directory}/dist-staging" />
+                                <copy file="src/distribution/README.md"
+                                      todir="${project.build.directory}/dist-staging"/>
                                 <copy todir="${project.build.directory}/dist-staging/config">
-                                    <fileset dir="src/distribution/config" includes="**/*" />
+                                    <fileset dir="src/distribution/config" includes="**/*"/>
                                 </copy>
 
                                 <!-- Copy versioned jar into app/ -->
-                                <copy file="${project.build.directory}/${project.artifactId}-${project.version}.jar" tofile="${project.build.directory}/dist-staging/app/${project.artifactId}-${project.version}.jar" />
+                                <copy file="${project.build.directory}/${project.artifactId}-${project.version}.jar"
+                                      tofile="${project.build.directory}/dist-staging/app/${project.artifactId}-${project.version}.jar"/>
 
                                 <!-- Write version file -->
-                                <echo file="${project.build.directory}/dist-staging/VERSION.txt">Application: ${project.name}
-Version: ${project.version}
-Build Date: ${maven.build.timestamp}
-Java Version: ${java.version}
-Spring Boot Version: ${spring.boot.version}
+                                <echo file="${project.build.directory}/dist-staging/VERSION.txt">Application:
+                                    ${project.name}
+                                    Version: ${project.version}
+                                    Build Date: ${maven.build.timestamp}
+                                    Java Version: ${java.version}
+                                    Spring Boot Version: ${spring.boot.version}
                                 </echo>
 
                                 <!-- Ensure Unix scripts executable -->
-                                <chmod dir="${project.build.directory}/dist-staging/bin" perm="755" type="file" includes="*.sh" />
+                                <chmod dir="${project.build.directory}/dist-staging/bin" perm="755" type="file"
+                                       includes="*.sh"/>
                             </target>
                         </configuration>
                     </execution>

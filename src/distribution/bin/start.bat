@@ -1,103 +1,92 @@
 @echo off
 setlocal enabledelayedexpansion
 
-
-REM ==========================================
-REM WedKnots - Start Script (Windows)
-REM ==========================================
-REM - Loads parent config.env (one level above install dir)
-REM - Then loads config\config.env to override
-REM - Stops existing app and starts new version
-REM - Creates wrapper bat in parent folder
-REM - Deletes and recreates WedKnots service
-
-REM Resolve install root (bin is under install root)
+REM Resolve application root directory
+REM BIN_DIR = C:\hosting\wed-knots\wed-knots-1.0.9\bin\
 set "BIN_DIR=%~dp0"
-for %%I in ("%BIN_DIR%..") do set "APP_ROOT=%%~fI"
+
+REM APP_ROOT = C:\hosting\wed-knots\wed-knots-1.0.9
+for %%I in ("%BIN_DIR:~0,-1%") do set "APP_ROOT=%%~dpI"
+set "APP_ROOT=%APP_ROOT:~0,-1%"
+
+REM PARENT_DIR = C:\hosting\wed-knots
+for %%I in ("%APP_ROOT%") do set "PARENT_DIR=%%~dpI"
+set "PARENT_DIR=%PARENT_DIR:~0,-1%"
+
+REM HOSTING_DIR = C:\hosting
+for %%I in ("%PARENT_DIR%") do set "HOSTING_DIR=%%~dpI"
+set "HOSTING_DIR=%HOSTING_DIR:~0,-1%"
+
 cd /d "%APP_ROOT%"
 
-REM Resolve parent directory
-for %%I in ("%APP_ROOT%..") do set "PARENT_DIR=%%~fI"
+REM Extract version from APP_ROOT folder name (wed-knots-1.0.9 -> 1.0.9)
+for %%I in ("%APP_ROOT%") do set "VERSION_FOLDER=%%~nxI"
+set "VERSION=%VERSION_FOLDER:wed-knots-=%"
+set "SERVICE_NAME=WedKnots"
 
 
-REM --- Load parent config.env if present ---
-set "PARENT_ENV=%APP_ROOT%\..\config.env"
-if exist "%PARENT_ENV%" (
-  echo Loading parent config: "%PARENT_ENV%"
-  for /f "usebackq delims=" %%A in ("%PARENT_ENV%") do (
-    if not "%%A"=="" if /i not "%%A:~0,1%%"=="#" set "%%A"
-  )
-) else (
-  echo No parent config.env found at ..\config.env
-)
-
-REM --- Load child config/config.env to override ---
-set "CHILD_ENV=%APP_ROOT%\config\config.env"
-if exist "%CHILD_ENV%" (
-  echo Loading child config: "%CHILD_ENV%"
-  for /f "usebackq delims=" %%A in ("%CHILD_ENV%") do (
-    if not "%%A"=="" if /i not "%%A:~0,1%%"=="#" set "%%A"
-  )
-) else (
-  echo No child config/config.env found
-)
-
-REM Defaults
-if not defined SPRING_PROFILES_ACTIVE set "SPRING_PROFILES_ACTIVE=prod"
-if not defined PORT set "PORT=8080"
-if not defined LOG_FILE set "LOG_FILE=logs/wedknots.log"
-
-REM Start the application manually
-goto startManually
-
-:startManually
-REM --- Stop existing Java process for this app ---
-echo Checking for existing application...
-for /f "tokens=2 delims=," %%P in ('tasklist /fi "IMAGENAME eq java.exe" /fo csv 2^>nul') do (
-  REM Blind kill any running java (customize with pid file if needed)
-  echo Stopping existing java.exe...
+REM Stop existing Java processes
+echo Stopping existing application...
+tasklist /fi "IMAGENAME eq java.exe" 2>nul | find /i "java.exe" >nul
+if %errorLevel% equ 0 (
   taskkill /F /IM java.exe >nul 2>&1
   timeout /t 2 >nul
-  goto afterStop
+  echo Stopped existing java.exe
 )
-:afterStop
+
+REM Remove old PID file if exists
+set "PID_FILE=%PARENT_DIR%\%SERVICE_NAME%.pid"
+if exist "%PID_FILE%" del "%PID_FILE%"
 
 REM Ensure logs directory exists
 if not exist "%APP_ROOT%\logs" mkdir "%APP_ROOT%\logs"
 
-REM Locate app jar in app folder
+REM Find JAR file
 set "JAR_FILE="
 for /f "delims=" %%J in ('dir /b "%APP_ROOT%\app\wed-knots-*.jar" 2^>nul') do set "JAR_FILE=%APP_ROOT%\app\%%J"
 if not defined JAR_FILE (
-  echo ERROR: Spring Boot jar not found in app\ folder.
+  echo ERROR: Spring Boot JAR not found in app\ folder
   pause
   exit /b 1
 )
 
-echo Starting application with JAR: "%JAR_FILE%"
-echo Logging to: %LOG_FILE%
+echo.
+echo Starting WedKnots Application
+echo ================================
+echo Service: %SERVICE_NAME%
+echo Version: %VERSION%
+echo JAR: %JAR_FILE%
+echo Log: %LOG_FILE%
+echo.
+echo Current directory: %cd%
+echo PARENT_DIR: %PARENT_DIR%
+echo HOSTING_DIR: %HOSTING_DIR%
+echo.
 
-REM Check if running as service or app (default to app if no parameter)
+REM Load environment variables from config files
+call %BIN_DIR%load-env.bat "%PARENT_DIR%\config.env"
+call %BIN_DIR%load-env.bat "%APP_ROOT%\config\config.env"
+
+
+REM Build Java command line arguments with all loaded variables
+set "JAVA_OPTS=-Xms512m -Xmx1024m"
+
+
+echo.
+echo Java Options Built:
+echo !JAVA_OPTS!
+echo.
+
+REM Start application based on mode
 if "%1"=="service" (
-  REM Running as service - start in background and monitor
-  echo Starting in background mode (service)...
-  start "WedKnots" /B java -Xms512m -Xmx1024m ^
-    -Dspring.profiles.active=%SPRING_PROFILES_ACTIVE% ^
-    -Dspring.datasource.url="%DATABASE_URL%" ^
-    -Dspring.datasource.username="%DATABASE_USERNAME%" ^
-    -Dspring.datasource.password="%DATABASE_PASSWORD%" ^
-    -Dspring.datasource.driver-class-name="org.postgresql.Driver" ^
-    -Dserver.port=%PORT% ^
-    -Dlogging.file.name="%LOG_FILE%" ^
-    -Djasypt.encryptor.password="%JASYPT_ENCRYPTOR_PASSWORD%" ^
-    -Dwhatsapp.webhook.verify-token="%WHATSAPP_VERIFY_TOKEN%" ^
-    -Dwhatsapp.webhook.app-secret="%WHATSAPP_APP_SECRET%" ^
-    -jar "%JAR_FILE%"
+  echo Mode: Background Service
+  start "WedKnots" /B java !JAVA_OPTS! -jar "%JAR_FILE%"
 
-  REM Wait for process to start
-  timeout /t 3 >nul
+  REM Wait for process to start and get PID
+  timeout /t 2 >nul
+  call :writePidFile
 
-  REM Monitor the Java process - keep script alive
+  timeout /t 1 >nul
   echo Monitoring Java process...
   :monitor_loop
   tasklist /fi "IMAGENAME eq java.exe" 2>nul | find /i "java.exe" >nul
@@ -105,23 +94,35 @@ if "%1"=="service" (
     timeout /t 10 >nul
     goto monitor_loop
   )
-
-  echo Java process has terminated. Exiting monitor.
+  echo Java process terminated
+  REM Clean up PID file
+  if exist "%PID_FILE%" del "%PID_FILE%"
 ) else (
-  REM Default behavior and explicit app mode - run in foreground
-  echo Starting in foreground mode (console - app mode)...
-  java -Xms512m -Xmx1024m ^
-    -Dspring.profiles.active=%SPRING_PROFILES_ACTIVE% ^
-    -Dspring.datasource.url="%DATABASE_URL%" ^
-    -Dspring.datasource.username="%DATABASE_USERNAME%" ^
-    -Dspring.datasource.password="%DATABASE_PASSWORD%" ^
-    -Dspring.datasource.driver-class-name="org.postgresql.Driver" ^
-    -Dserver.port=%PORT% ^
-    -Dlogging.file.name="%LOG_FILE%" ^
-    -Djasypt.encryptor.password="%JASYPT_ENCRYPTOR_PASSWORD%" ^
-    -Dwhatsapp.webhook.verify-token="%WHATSAPP_VERIFY_TOKEN%" ^
-    -Dwhatsapp.webhook.app-secret="%WHATSAPP_APP_SECRET%" ^
-    -jar "%JAR_FILE%"
+  echo Mode: Foreground Console
+  java !JAVA_OPTS! -jar "%JAR_FILE%"
 )
 
 endlocal
+exit /b 0
+
+REM ==========================================
+REM Function to write PID file
+REM ==========================================
+:writePidFile
+REM Get the PID of the most recently started java process
+for /f "tokens=2" %%A in ('tasklist /fi "IMAGENAME eq java.exe" /fo csv 2^>nul ^| find /i "java.exe"') do set "JAVA_PID=%%A"
+
+if defined JAVA_PID (
+  (
+    echo ServiceName=%SERVICE_NAME%
+    echo Version=%VERSION%
+    echo PID=!JAVA_PID!
+    echo StartTime=%date% %time%
+  ) > "%PID_FILE%"
+  echo Created PID file: %PID_FILE%
+  echo Service: %SERVICE_NAME%, Version: %VERSION%, PID: !JAVA_PID!
+) else (
+  echo Warning: Could not determine Java process PID
+)
+exit /b 0
+
