@@ -1,23 +1,26 @@
 @echo off
-setlocal
+setlocal enabledelayedexpansion
 
-REM Check for administrator privileges and elevate if needed
-net session >nul 2>&1
-if %errorLevel% neq 0 (
-    echo Requesting administrator privileges...
-    powershell -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
-    exit /b
-)
 
 REM ==========================================
 REM WedKnots - Stop Script (Windows)
 REM ==========================================
 
+REM Resolve paths
+set "BIN_DIR=%~dp0"
+for %%I in ("%BIN_DIR:~0,-1%") do set "APP_ROOT=%%~dpI"
+set "APP_ROOT=%APP_ROOT:~0,-1%"
+for %%I in ("%APP_ROOT%") do set "PARENT_DIR=%%~dpI"
+set "PARENT_DIR=%PARENT_DIR:~0,-1%"
+
+set "SERVICE_NAME=WedKnots"
+set "PID_FILE=%PARENT_DIR%\%SERVICE_NAME%.pid"
+
 REM Try to stop the Windows service first
-echo Attempting to stop WedKnots service...
-sc query WedKnots >nul 2>&1
+echo Attempting to stop %SERVICE_NAME% service...
+sc query %SERVICE_NAME% >nul 2>&1
 if %errorLevel% equ 0 (
-  sc stop WedKnots >nul 2>&1
+  sc stop %SERVICE_NAME% >nul 2>&1
   if %errorLevel% equ 0 (
     echo Service stopped successfully.
     timeout /t 3 >nul
@@ -26,7 +29,7 @@ if %errorLevel% equ 0 (
     timeout /t 3 >nul
   )
 ) else (
-  echo WedKnots service not found.
+  echo %SERVICE_NAME% service not found.
 )
 
 REM Force kill any remaining java.exe processes
@@ -41,7 +44,15 @@ if %errorLevel% equ 0 (
   echo No Java processes found.
 )
 
-echo Application stopped.
-:done
+REM Clean up PID file
+if exist "%PID_FILE%" (
+  del "%PID_FILE%"
+  echo PID file removed: %PID_FILE%
+)
+
+echo.
+echo Application stopped successfully.
+echo.
+
 endlocal
 

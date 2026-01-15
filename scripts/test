@@ -1,0 +1,6 @@
+Start-Process -FilePath "C:\hosting\Wed-Knots\Wed-Knots-1.0.11\start.bat" -WindowStyle Hidden -Wait
+
+New-Service -Name "MyBatchService" `
+  -BinaryPathName "powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:\Scripts\RunBatch.ps1" `
+  -DisplayName "My Batch File Service" `
+  -StartupType Automatic
